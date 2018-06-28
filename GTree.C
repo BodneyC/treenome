@@ -10,7 +10,12 @@ namespace mingw_fix {
 	}
 }
 
-void GTree::addReadFULL(std::string &read)
+void GTree::addReadOne()
+{
+
+}
+
+void GTree::addReadFull(std::string &read)
 {
 	// Very primitive stage at the mo
 	Node *tmpNode = root;
@@ -25,17 +30,38 @@ void GTree::addReadFULL(std::string &read)
 	}
 }
 
-void GTree::addReadONE()
+void GTree::cleanBranches(Node *node)
 {
+	if(!node)
+		return;
 
+	int nodeCount = 0;
+	int ind = 0;
+	for(int i = 0; i < NBASES; i++) {
+		if(node->subnodes[i]) {
+			nodeCount++;
+			ind = i;
+		}
+		if(nodeCount == 2)
+			break;
+	}
+	if(nodeCount == 1 && node->occurences == 1 && 
+			node->subnodes[ind]->occurences == 1) {
+		deleteTree(node->subnodes[ind]);
+		node->subnodes[ind] = nullptr;
+		return;
+	} 
+	for(int i = 0; i < NBASES; i++)
+		cleanBranches(node->subnodes[i]);
 }
 
 void GTree::deleteTree(Node* node)
 {
 	if(node) {
-		for(int i = 0; i < 4; i++)
+		for(int i = 0; i < NBASES; i++)
 			deleteTree(node->subnodes[i]);
 		delete node;
+		node = nullptr;
 	}
 }
 
@@ -49,7 +75,6 @@ void GTree::printAllPaths(Node *node, int len, short label)
 	std::string val = mingw_fix::to_string(node->occurences);
     occuPaths += val;
 	occuPaths += "-";
-	
 	basePaths.erase(len, basePaths.length());
 	switch (label) {
 	case 0:
@@ -64,20 +89,17 @@ void GTree::printAllPaths(Node *node, int len, short label)
 	case 3:
 		basePaths += 'G';
 		break;
-	default:
+	default: // Shouldn't occur
 		basePaths += 'N';
 		break;
 	}
 	for(unsigned int i = 0; i < val.length(); i++)
 		basePaths += '-';
-
 	len += val.length() + 1;
-
 	bool check = 0;
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < NBASES; i++)
 		if(node->subnodes[i])
 			check = true;
-			
     if(!check) {
 		occuPaths.erase(occuPaths.length() - 1);
 		std::cout << occuPaths << std::endl;
@@ -85,7 +107,6 @@ void GTree::printAllPaths(Node *node, int len, short label)
 		std::cout << basePaths << "\n" << std::endl;
         return;
     }
-
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < NBASES; i++)
 		printAllPaths(node->subnodes[i], len, i);
 }

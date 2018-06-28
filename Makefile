@@ -1,5 +1,5 @@
 CC=g++
-LIBS=-g -Wall
+LIBS=-g -Wall -std=c++11
 PROG=TreeNome
 SRC=$(wildcard *.C)
 OBJ=$(patsubst %.C, obj/%.o, $(SRC))
