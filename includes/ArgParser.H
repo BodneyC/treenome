@@ -6,11 +6,11 @@
 
 class ArgParser {
 public:
-	ArgParser(int& _argc, char** _argv) 
+	ArgParser(int& argc, char** argv) 
 	{
-		argc = _argc;
+		this->argc = argc;
 		for(int i = 0; i < argc; i++)
-			args.push_back(std::string(_argv[i]));
+			args.push_back(std::string(argv[i]));
 	}
 	bool argExists(const std::string &arg)
 	{

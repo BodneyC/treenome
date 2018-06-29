@@ -1,7 +1,9 @@
-#include <sstream>
 #include "includes/GTree.H"
 
+/** --------------- Helper Functions --------------- **/
 #ifdef __MINGW64__
+#include <sstream>
+
 namespace mingw_fix {
 	template< typename T > std::string to_string(const T &val)
 	{
@@ -12,28 +14,70 @@ namespace mingw_fix {
 }
 #endif /*__MINGW32__*/
 
-#ifdef READSONE
-void GTree::addReadOne()
+char retLabel(int label)
 {
-
-}
-#endif /*READSONE*/
-
-void GTree::addReadFull(std::string &read)
-{
-	// Very primitive stage at the mo
-	Node *tmpNode = root;
-	root->occurences++;
-
-	for(uint i = 1; i < read.length(); i++) {
-		short ind = (read[i] & 0xF) >> 1;
-		if(!(tmpNode->subnodes[ind]))
-			tmpNode->subnodes[ind] = new Node;
-		tmpNode = tmpNode->subnodes[ind];
-		tmpNode->occurences++;
+	switch(label) {
+	case 0:
+		return 'A'; break;
+	case 1:
+		return 'C'; break;
+	case 2:
+		return 'T'; break;
+	case 3:
+		return 'G'; break;
+	default:
+		return 'N'; break;
 	}
 }
 
+float cumAve(float curAve, char qual, ulong occ)
+{
+	// Cumulative average: A_{n+1} = ((A_n + x_{n+1}) - A_n) / n + 1
+	return curAve + 
+		((static_cast<float>(qual) - curAve) / static_cast<double>(occ));
+}
+
+/** ---------------- Graph Creation ---------------- **/
+void GTree::createRoot(std::vector<std::string> &reads, int label)
+{
+	root = new Node;
+	char lab = retLabel(label);
+
+	for(uint i = 0; i < reads.size(); i++) {
+		auto offset = reads[i].find(lab, 0);
+		if(offset != std::string::npos) {
+			root->readNum = i;
+			root->offset = offset;
+			return;
+		}
+	}
+}
+
+void GTree::addReadOne(std::string &read, std::string &qual)
+{
+
+}
+
+void GTree::addReadFull(ulong readNum, short offset, std::string &read, std::string &qual)
+{
+	Node *tmpNode = root;
+	tmpNode->occurences++;
+	tmpNode->weight = cumAve(root->weight, qual[0], tmpNode->occurences);
+	
+	for(uint i = offset + 1; i < read.length(); i++) {
+		short ind = (read[i] & 0xF) >> 1;
+		if(!(tmpNode->subnodes[ind])) {
+			tmpNode->subnodes[ind] = new Node;
+			tmpNode->subnodes[ind]->readNum = readNum;
+			tmpNode->subnodes[ind]->offset = offset;
+		}
+		tmpNode = tmpNode->subnodes[ind];
+		tmpNode->occurences++;
+		tmpNode->weight = cumAve(tmpNode->weight, qual[0], tmpNode->occurences);
+	}
+}
+
+/** ------------- None recursive calls ------------- **/
 void GTree::cleanBranchesNR(std::string &read)
 {
 	Node *tmpNode = root;
@@ -65,6 +109,7 @@ void GTree::deleteTreeNR(Node **node, std::string readSub)
 	*curNode = nullptr;
 }
 
+/** -------------- Recursive Cleaning -------------- **/
 void GTree::cleanBranches(Node *node)
 {
 	if(!node)
@@ -100,7 +145,7 @@ void GTree::deleteTree(Node* node)
 	}
 }
 
-// Definately needs work
+/** ---------------- Path Printing ----------------- **/
 void GTree::printAllPaths(Node *node, int len, short label)
 {
     if(!node)

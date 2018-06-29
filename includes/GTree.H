@@ -17,17 +17,12 @@ typedef unsigned int uint;
 
 typedef struct Node {
 	ulong occurences;
+	float weight;
+	short offset;
+	ulong readNum;
 	Node* subnodes[NBASES];
 
-// The ifdeffing of ...ReadOne() is because it adds ten bytes per node
-#ifdef READSONE
-	short offset;
-	ulong readNumber;
-
-	Node(): occurences(0), offset(0), readNumber(0)
-#else
-	Node(): occurences(0) 
-#endif /*READSONE*/
+	Node(): occurences(0), weight(0), offset(0), readNum(0)
 	{
 		for(int i = 0; i < NBASES; i++)
 			subnodes[i] = nullptr;
@@ -37,17 +32,18 @@ typedef struct Node {
 // GTree class used in construction and destruction of tree
 class GTree {
 public:
-	GTree() { root = new Node; }
-	GTree(const GTree &orig) { root = new Node; }
 	~GTree() { deleteTree(root); }
 
-	Node *getRoot() { return root; }
-	void addReadFull(std::string &read);
-	void addReadOne();
+	void createRoot(std::vector<std::string> &reads, int label);
+	void addReadFull(ulong readNum, short offset, std::string &read, std::string &qual);
+	void addReadOne(std::string &read, std::string &qual);
 	// cleanBranches..() only needed if ..FullClean is used
 	void cleanBranches() { cleanBranches(root); }
 	void cleanBranchesNR(std::string &read);
 	void deleteTree() { deleteTree(root); }
+
+	Node *getRoot() { if(root) return root; 
+		else return nullptr; }
 	void printAllPaths(short label) { 
 		printAllPaths(root, 0, label);
 		basePaths = occuPaths = "";
@@ -57,7 +53,7 @@ private:
 	std::string basePaths;
 	std::string occuPaths;
 
-	void deleteTree(Node* root);
+	void deleteTree(Node *root);
 	void deleteTreeNR(Node **node, std::string readSub);
 	void printAllPaths(Node *node, int len, short label);
 	void cleanBranches(Node *node);
@@ -65,15 +61,20 @@ private:
 
 // Structure which holds read data and the four GTrees
 typedef struct TreeTop {
-	long nReads, readLength;
+	ulong nReads;
+	int readLength;
 	std::vector<std::string> reads; 
 	std::vector<std::string> qualities;
 	GTree trees[NBASES];
+	bool ioSuccess;
 
-	TreeTop(): nReads(0), readLength(0) {}	
+	TreeTop(std::string filename);
+	bool readSuccess() { return ioSuccess;  }
+	void createRoots();
 	void processReadsFull();
 	void processReadsFullClean();
 	void processReadsFullCleanNR();
+	void processReadsFullCleanNRBalanced();
 	void processReadsOne();
 } TreeTop;
 

@@ -15,15 +15,13 @@ int main(int argc, char** argv)
 		return FILE_ERROR;
 	}
 
-	InputFile iFile(iFilename);
-	TreeTop treeTop;
-
-	iFile.readFastQ(treeTop);
-	if(iFile.nReads == FILE_ERROR ) {
+	TreeTop treeTop(iFilename);
+	bool readSuccess = treeTop.readSuccess();
+	if(!readSuccess) {
 		std::cout << "Input file could not be opened" << std::endl;
 		return FILE_ERROR;
 	} else {
-		std::cout << iFile.nReads << " records found\n" << std::endl;
+		std::cout << treeTop.nReads << " records found\n" << std::endl;
 	}
 
 	treeTop.processReadsFullCleanNR();
