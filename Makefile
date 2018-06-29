@@ -1,4 +1,4 @@
-CC=g++
+CC=clang++-3.8
 LIBS=-g -Wall -std=c++11
 PROG=TreeNome
 SRC=$(wildcard *.C)

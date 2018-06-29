@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 		std::cout << iFile.nReads << " records found\n" << std::endl;
 	}
 
-	treeTop.processReadsFullClean();
+	treeTop.processReadsFullCleanNR();
 	treeTop.trees[0].printAllPaths(0);
 
 	return 0;

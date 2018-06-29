@@ -1,6 +1,7 @@
 #include <sstream>
 #include "includes/GTree.H"
 
+#ifdef __MINGW64__
 namespace mingw_fix {
 	template< typename T > std::string to_string(const T &val)
 	{
@@ -9,11 +10,14 @@ namespace mingw_fix {
 		return ss.str() ;
 	}
 }
+#endif /*__MINGW32__*/
 
+#ifdef READSONE
 void GTree::addReadOne()
 {
 
 }
+#endif /*READSONE*/
 
 void GTree::addReadFull(std::string &read)
 {
@@ -21,13 +25,44 @@ void GTree::addReadFull(std::string &read)
 	Node *tmpNode = root;
 	root->occurences++;
 
-	for(unsigned int i = 1; i < read.length(); i++) {
+	for(uint i = 1; i < read.length(); i++) {
 		short ind = (read[i] & 0xF) >> 1;
 		if(!(tmpNode->subnodes[ind]))
 			tmpNode->subnodes[ind] = new Node;
 		tmpNode = tmpNode->subnodes[ind];
 		tmpNode->occurences++;
 	}
+}
+
+void GTree::cleanBranchesNR(std::string &read)
+{
+	Node *tmpNode = root;
+
+	for(uint i = 1; i < read.length(); i++) {
+		short ind = (read[i] & 0xF) >> 1;
+		if(tmpNode->occurences == 1 && 
+				tmpNode->subnodes[ind]->occurences == 1) {
+			deleteTreeNR(&tmpNode->subnodes[ind], read.substr(i, read.length()));
+			return;
+		}
+		tmpNode = tmpNode->subnodes[ind];
+	}
+}
+
+// If both occurences are both 1, the remaining branch is a singly linked line
+void GTree::deleteTreeNR(Node **node, std::string readSub)
+{
+	Node **curNode = node;
+	
+	for(uint i = 0; i < readSub.length(); i++) {
+		short ind = (readSub[i + 1] & 0xF) >> 1;
+
+		Node *nextNode = (*curNode)->subnodes[ind];
+		delete *(curNode);
+		*curNode = nullptr;
+		*curNode = nextNode;
+	}
+	*curNode = nullptr;
 }
 
 void GTree::cleanBranches(Node *node)
@@ -72,7 +107,11 @@ void GTree::printAllPaths(Node *node, int len, short label)
         return;
 
 	occuPaths.erase(len, occuPaths.length());
+#ifdef __MINGW64__
 	std::string val = mingw_fix::to_string(node->occurences);
+#else
+	std::string val = std::to_string(node->occurences);
+#endif /*__MINGW32__*/
     occuPaths += val;
 	occuPaths += "-";
 	basePaths.erase(len, basePaths.length());
@@ -93,7 +132,7 @@ void GTree::printAllPaths(Node *node, int len, short label)
 		basePaths += 'N';
 		break;
 	}
-	for(unsigned int i = 0; i < val.length(); i++)
+	for(uint i = 0; i < val.length(); i++)
 		basePaths += '-';
 	len += val.length() + 1;
 	bool check = 0;
