@@ -2,7 +2,7 @@
 #include "includes/InputFile.H"
 
 TreeTop::TreeTop(const std::string &_filename): 
-	filename(_filename), nReads(0), readLength(0), ioSuccess(0)
+	filename(_filename), sequence(""), nReads(0), readLength(0), ioSuccess(0)
 {
 	InputFile iFile(filename);
 	ioSuccess = iFile.readFastQ(reads, quals);
@@ -11,6 +11,48 @@ TreeTop::TreeTop(const std::string &_filename):
 
 	for(int i = 0; i < NBASES; i++)
 		trees[i].createRoot(i, reads, quals);
+}
+
+short TreeTop::maxPath()
+{
+	int start = 0;
+	ulong maxOccs = 0;
+	Node* treeRoots[NBASES];
+
+	for(short i = 0; i < NBASES; i++) {
+		treeRoots[i] = trees[i].getRoot();
+		if(treeRoots[i]->occs > maxOccs) {
+			maxOccs = treeRoots[i]->occs;
+			start = i;
+		}
+	}
+
+	trees[start].followPath(trees[start].getRoot(), start, sequence);
+
+	return start;
+}
+
+void TreeTop::buildSequence()
+{
+	maxPath();
+
+	ulong offset = 1;
+	while(offset < 20 /*trees[start].getRoot()->occs*/) {
+
+		// Possibly make is a tighter gap as its working from single letters
+		if(offset == sequence.length() - 1) {
+			sequence += 'N';
+			maxPath();
+			offset++;
+		}
+
+		std::cout << "T/O/L: " << sequence[offset] << "/" << 
+			offset << "/" << sequence.length() << std::endl;
+		std::cout << "On Sequence: " << sequence << std::endl;
+
+		trees[BASE_IND(sequence[offset])].addToSeq(offset, sequence);
+		offset++;
+	}
 }
 
 void TreeTop::processReadsOne()

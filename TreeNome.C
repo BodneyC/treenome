@@ -45,7 +45,9 @@ int main(int argc, char** argv)
 	}
 
 	treeTop.processReadsOne();
-	treeTop.trees[0].printAllPaths(0);
+	for(int i = 0; i < NBASES; i++)
+	treeTop.trees[i].printAllPaths(i);
+	treeTop.buildSequence();
 
 	return 0;
 }

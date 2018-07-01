@@ -29,6 +29,19 @@ namespace GTreeFuncs {
 			return 'N';
 		}
 	}
+
+	short mostOccs(Node *node)
+	{
+		short ind;
+		ulong occCnt = 0;
+		for(int i = 0; i < NBASES; i++) {
+			if(node->subnodes[i] && node->subnodes[i]->occs > occCnt) {
+				occCnt = node->subnodes[i]->occs;
+				ind = i;
+			}
+		}
+		return ind;
+	}
 }
 
 void GTree::updateWeight(Node *node, char qual)
@@ -51,10 +64,59 @@ short GTree::countChildren(Node *node)
 	return children;
 }
 
+/** --------------- Genome Creation ---------------- **/
+void GTree::followPath(Node *node, short ind, std::string &sequence)
+{
+	short children;
+	do {
+		children = countChildren(node);
+		sequence += GTreeFuncs::retLabel(ind);
+		ind = GTreeFuncs::mostOccs(node);
+		node = node->subnodes[ind];
+	} while(children);
+}
+
+void GTree::addToSeq(ulong offset, std::string &sequence)
+{
+	Node *node = root;
+	short ind = 0;
+	uint i, j, seqLength = sequence.length() - offset;
+	Node **path = new Node*[seqLength];
+
+	for(i = 0; i < sequence.length() - offset; i++)
+		path[i] = nullptr;
+
+	// End of current sequence	
+	for(i = offset + 1, j = 0; i < sequence.length(); i++, j++) {
+		ind = BASE_IND(sequence[i]);
+		if(node->subnodes[ind] && countChildren(node->subnodes[ind])) {
+			path[j] = node;
+			node = node->subnodes[ind];
+		} else {
+			delete[] path;
+			return;
+		}
+	}
+
+	ind = BASE_IND(sequence[i]);
+	while(countChildren(node)) {
+		ind = GTreeFuncs::mostOccs(node);
+		sequence += GTreeFuncs::retLabel(ind);
+		node->occs--;
+		if(!node->subnodes[ind])
+			break;
+		node = node->subnodes[ind];
+	}
+	
+	for(i = 0; i < seqLength; i++)
+		if(path[i]) 
+			path[i]->occs--;
+
+	delete[] path;
+}
+
 /** ---------------- Graph Creation ---------------- **/
-void GTree::createRoot(short ind,
-		std::vector<std::string> &reads,
-		std::vector<std::string> &quals)
+void GTree::createRoot(short ind, VecString &reads, VecString &quals)
 {
 	root = new Node;
 	char lab = GTreeFuncs::retLabel(ind);
@@ -86,9 +148,7 @@ void GTree::createNode(Node *node, short ind, char qual)
 	// updateWeight(node, qual);
 }
 
-void GTree::balanceNode(Node *node,
-		std::vector<std::string> &reads,
-		std::vector<std::string> &quals)
+void GTree::balanceNode(Node *node, VecString &reads, VecString &quals)
 {
 	// Get the offset and read before overiding/updating
 	ulong lReadNum = node->readNum;
@@ -144,8 +204,7 @@ void GTree::balanceNode(Node *node,
 
 /** --------------- Read Processing ---------------- **/
 void GTree::addReadOne(ulong readNum, short offset, 
-		std::vector<std::string> &reads,
-		std::vector<std::string> &quals)
+		VecString &reads, VecString &quals)
 {
 	Node *node = root;
 	
@@ -191,13 +250,14 @@ Node* GTree::cleanBranchesNR(short offset, std::string &read)
 			// Delete branch of ones leaving single unique path
 			deleteTreeLL(&nextNode->subnodes[ind], 
 					read.substr(i, read.length()));
-			// Count number of children of parent, if only 1 then node need balancing
+			// Count number of children of parent, 
+			//	if only 1 then node need balancing
 			if(countChildren(curNode) < 2) {
 				return curNode;
 			}
 			break;
 		}
-		// Traverse path of read maintaining previous node of occ > 1
+		// Traverse path of read maintaining previous node of occs > 1
 		curNode = nextNode;
 		nextNode = nextNode->subnodes[ind];
 	}
