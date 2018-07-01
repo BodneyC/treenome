@@ -3,10 +3,12 @@
 
 #if __cplusplus < 201103L
 #define nullptr 0
-#error fish
 #endif /*c++11 check*/
 
 #define NBASES 4
+
+// Little bithack converting ACTG -> 0123
+#define BASE_IND(x) (((x) & 0xF) >> 1)
 
 #include <iostream>
 #include <string>
@@ -16,13 +18,13 @@ typedef unsigned long ulong;
 typedef unsigned int uint;
 
 typedef struct Node {
-	ulong occurences;
+	ulong occs;
 	float weight;
 	short offset;
 	ulong readNum;
 	Node* subnodes[NBASES];
 
-	Node(): occurences(0), weight(0), offset(0), readNum(0)
+	Node(): occs(0), weight(0), offset(0), readNum(0)
 	{
 		for(int i = 0; i < NBASES; i++)
 			subnodes[i] = nullptr;
@@ -34,16 +36,25 @@ class GTree {
 public:
 	~GTree() { deleteTree(root); }
 
-	void createRoot(std::vector<std::string> &reads, int label);
-	void addReadFull(ulong readNum, short offset, std::string &read, std::string &qual);
-	void addReadOne(std::string &read, std::string &qual);
-	// cleanBranches..() only needed if ..FullClean is used
-	void cleanBranches() { cleanBranches(root); }
-	void cleanBranchesNR(std::string &read);
-	void deleteTree() { deleteTree(root); }
-
 	Node *getRoot() { if(root) return root; 
 		else return nullptr; }
+	void createRoot(short ind,
+			std::vector<std::string> &reads,
+			std::vector<std::string> &quals);
+
+	void addReadFull(ulong readNum, short offset, 
+			std::string &read, std::string &qual);
+	void addReadOne(ulong readNum, short offset, 
+			std::vector<std::string> &reads,
+			std::vector<std::string> &quals);
+
+	// cleanBranches..() only needed if ..ReadFull() is used
+	void cleanBranches() { cleanBranches(root); }
+	Node* cleanBranchesNR(short offset, std::string &read);
+	void balanceNode(Node *nodes,
+			std::vector<std::string> &reads,
+			std::vector<std::string> &quals);
+
 	void printAllPaths(short label) { 
 		printAllPaths(root, 0, label);
 		basePaths = occuPaths = "";
@@ -53,29 +64,34 @@ private:
 	std::string basePaths;
 	std::string occuPaths;
 
+	void createNode(Node *node, short label, char qual);
+	short countChildren(Node *node);
 	void deleteTree(Node *root);
-	void deleteTreeNR(Node **node, std::string readSub);
+	void deleteTreeLL(Node **node, std::string readSub);
 	void printAllPaths(Node *node, int len, short label);
 	void cleanBranches(Node *node);
 };
 
 // Structure which holds read data and the four GTrees
 typedef struct TreeTop {
+	std::string filename;
 	ulong nReads;
 	int readLength;
-	std::vector<std::string> reads; 
-	std::vector<std::string> qualities;
-	GTree trees[NBASES];
 	bool ioSuccess;
+	std::vector<std::string> reads; 
+	std::vector<std::string> quals;
+	GTree trees[NBASES];
 
-	TreeTop(std::string filename);
+	TreeTop(const std::string &filename);
 	bool readSuccess() { return ioSuccess;  }
 	void createRoots();
+	short requestBase(ulong readNum, short offset);
+
+	void processReadsOne();
 	void processReadsFull();
 	void processReadsFullClean();
 	void processReadsFullCleanNR();
 	void processReadsFullCleanNRBalanced();
-	void processReadsOne();
 } TreeTop;
 
 #endif /*_GTREE_*/

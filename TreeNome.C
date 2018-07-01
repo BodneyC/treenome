@@ -3,15 +3,31 @@
 #include "includes/InputFile.H"
 #include "includes/GTree.H"
 
+#define USAGE_ERROR -1
+
+void argHelp()
+{
+	std::cout << "Command usage: \n\n"
+		"\t""./TreeNome [-f ./path/to/file]"
+		"Where:\n\n"
+		"\t""-f <string>\n"
+		"\t Path to input file (fastq format)" << std::endl;
+}
+
 int main(int argc, char** argv)
 {
-	std::string iFilename = "";
 	ArgParser argParser(argc, argv);
 
+	if(argParser.argExists("-h")) {
+		argHelp();
+		return USAGE_ERROR;
+	}
+	std::string iFilename = "";
 	if(argParser.argExists("-f")) {
 		iFilename = argParser.stringOption("-f");
 	} else {
 		std::cout << "Input file not supplied" << std::endl;
+		argHelp();
 		return FILE_ERROR;
 	}
 
@@ -24,7 +40,7 @@ int main(int argc, char** argv)
 		std::cout << treeTop.nReads << " records found\n" << std::endl;
 	}
 
-	treeTop.processReadsFullCleanNR();
+	treeTop.processReadsOne();
 	treeTop.trees[0].printAllPaths(0);
 
 	return 0;

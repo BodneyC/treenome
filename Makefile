@@ -1,4 +1,4 @@
-CC=clang++-3.8
+CC=clang++
 LIBS=-g -Wall -std=c++11
 PROG=TreeNome
 SRC=$(wildcard *.C)
@@ -12,7 +12,10 @@ $(PROG): $(OBJ)
 $(OBJ): obj/%.o: %.C
 	$(CC) $(LIBS) -o $@ -c $<
 
-.PHONY: clean
+.PHONY: run clean
+
+run:
+	./$(PROG) -f ./fastq/frag_2.fastq
 
 clean:
 	rm $(OBJ) $(PROG)

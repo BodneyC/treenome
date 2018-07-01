@@ -6,20 +6,28 @@ bool InputFile::readFastQ(
 		)
 {
 	long i = 3, j = 1;
+	short len = 0;
+
 	std::ifstream inpFile(filename.c_str());
 	if(!inpFile) {
 		return 0;
 	}
 
 	for(std::string line; std::getline(inpFile, line); i++, j++) {
-		if(!(i % 4))
+		if(i == 3)
+			readLength = line.length();
+		if(!(i % 4)) {
+			len = line.find('N');
+			line = line.substr(0, len);
 			reads.push_back(line);
-		if(!(j % 4))
+		}
+		if(!(j % 4)) {
+			line = line.substr(0, len);
 			qualities.push_back(line);
+		}
 	}
 
 	nReads = (i - 3) / 4;
-	readLength = reads[0].length();
 
 	return 1;
 }
