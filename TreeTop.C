@@ -36,12 +36,10 @@ void TreeTop::processReadsFullCleanNRBalanced()
 		for(short j = 0; j < curLength; j++) {
 			// Delete linked list of ones for memories sake
 			Node *tmpNode = trees[BASE_IND(curRead[j])].cleanBranchesNR(j, curRead);
-			if(i > 0 && tmpNode) {
-				// Because the string causing the previous node (tmpNode) to be
-				//	created could have come from anywhere both reads and 
-				//	quals are needed
-				//trees[BASE_IND(curRead[j])].balanceNode(tmpNode, reads, quals);
-			}
+			// Because the string causing the previous node (tmpNode) to be
+			//	created could have come from anywhere both reads and 
+			//	quals are needed
+			trees[BASE_IND(curRead[j])].balanceNode(tmpNode, reads, quals);
 		}
 	}
 }

@@ -5,36 +5,40 @@
 
 #define USAGE_ERROR -1
 
+struct CMDArgs {
+	std::string iFilename;
+};
+
 void argHelp()
 {
-	std::cout << "Command usage: \n\n"
+	std::cout << "\nCommand usage: \n\n"
 		"\t""./TreeNome [-f ./path/to/file]"
 		"Where:\n\n"
 		"\t""-f <string>\n"
-		"\t Path to input file (fastq format)" << std::endl;
+		"\t Path to input file (fastq format)\n" << std::endl;
 }
 
 int main(int argc, char** argv)
 {
 	ArgParser argParser(argc, argv);
+	struct CMDArgs argList;
 
 	if(argParser.argExists("-h")) {
 		argHelp();
 		return USAGE_ERROR;
 	}
-	std::string iFilename = "";
 	if(argParser.argExists("-f")) {
-		iFilename = argParser.stringOption("-f");
+		argList.iFilename = argParser.stringOption("-f");
 	} else {
-		std::cout << "Input file not supplied" << std::endl;
+		std::cout << "[ERR]: Input file not supplied" << std::endl;
 		argHelp();
 		return FILE_ERROR;
 	}
 
-	TreeTop treeTop(iFilename);
+	TreeTop treeTop(argList.iFilename);
 	bool readSuccess = treeTop.readSuccess();
 	if(!readSuccess) {
-		std::cout << "Input file could not be opened" << std::endl;
+		std::cout << "[ERR]: Input file could not be opened" << std::endl;
 		return FILE_ERROR;
 	} else {
 		std::cout << treeTop.nReads << " records found\n" << std::endl;

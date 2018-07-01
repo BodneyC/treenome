@@ -13,27 +13,42 @@ namespace mingw_fix {
 }
 #endif /*__MINGW32__*/
 
-char retLabel(int label)
-{
-	switch(label) {
-	case 0:
-		return 'A';
-	case 1:
-		return 'C';
-	case 2:
-		return 'T';
-	case 3:
-		return 'G';
-	default: // 7 but it shouldn't
-		return 'N';
+namespace GTreeFuncs {
+	char retLabel(int label)
+	{
+		switch(label) {
+		case 0:
+			return 'A';
+		case 1:
+			return 'C';
+		case 2:
+			return 'T';
+		case 3:
+			return 'G';
+		default: // 7 but it shouldn't
+			return 'N';
+		}
 	}
 }
 
-float cumAve(float curAve, char qual, ulong occ)
+void GTree::updateWeight(Node *node, char qual)
 {
 	// Cumulative average: A_{n+1} = ((A_n + x_{n+1}) - A_n) / n + 1
-	return curAve + 
-		((static_cast<float>(qual) - curAve) / static_cast<double>(occ));
+	node->weight += ((static_cast<float>(qual) - node->weight) / 
+			static_cast<double>(++node->occs));
+	//return curAve + 
+	//	((static_cast<float>(qual) - curAve) / static_cast<double>(occ));
+}
+
+short GTree::countChildren(Node *node)
+{
+	short children = 0;
+
+	for(int i = 0; i < NBASES; i++)
+		if(node->subnodes[i])
+			children++;
+
+	return children;
 }
 
 /** ---------------- Graph Creation ---------------- **/
@@ -42,7 +57,7 @@ void GTree::createRoot(short ind,
 		std::vector<std::string> &quals)
 {
 	root = new Node;
-	char lab = retLabel(ind);
+	char lab = GTreeFuncs::retLabel(ind);
 
 	for(uint i = 0; i < reads.size(); i++) {
 		auto offset = reads[i].find(lab, 0);
@@ -66,6 +81,65 @@ void GTree::createNode(Node *node, short ind, char qual)
 	tmpNode->readNum = node->readNum;
 	tmpNode->offset = node->offset + 1;
 	tmpNode->weight = qual;
+
+	// addReadFull() looses accuracy with this
+	// updateWeight(node, qual);
+}
+
+void GTree::balanceNode(Node *node,
+		std::vector<std::string> &reads,
+		std::vector<std::string> &quals)
+{
+	// Get the offset and read before overiding/updating
+	ulong lReadNum = node->readNum;
+	std::string lRead = reads[lReadNum];
+	short lOffset = node->offset + 1;
+	short lInd = BASE_IND(lRead[lOffset]);
+	
+	// If the paths are different:
+	if(!node->subnodes[lInd]) {
+		createNode(node, lInd, quals[lReadNum][lOffset]);
+		updateWeight(node->subnodes[lInd], quals[lReadNum][lOffset]);
+		return;
+	}
+
+	// If the paths are literally the same:
+	if(lOffset == node->subnodes[lInd]->offset &&
+			lReadNum == node->subnodes[lInd]->readNum)
+		return;
+
+	// If the paths follow the same route:
+	ulong rReadNum = node->subnodes[lInd]->readNum;
+	std::string rRead = reads[rReadNum];
+	short rOffset = rRead[node->subnodes[lInd]->offset + 1];
+	short rInd = 0;
+	lOffset++;
+	while(lOffset < (short)lRead.length() && rOffset < (short)rRead.length()) {
+		node = node->subnodes[lInd];
+		updateWeight(node, quals[rReadNum][rOffset]);
+		rInd = BASE_IND(rRead[rOffset]);
+		lInd = BASE_IND(lRead[lOffset]);
+
+		if(lRead[lOffset] != rRead[rOffset]) {
+			createNode(node, lInd, quals[lReadNum][lOffset]);
+			updateWeight(node->subnodes[lInd], quals[lReadNum][lOffset]);
+			createNode(node, rInd, quals[rReadNum][rOffset]);
+			updateWeight(node->subnodes[rInd], quals[rReadNum][rOffset]);
+			return;
+		}
+
+		lOffset++;
+		rOffset++;
+	} 
+
+	// There will be imbalances caused by running out of read length
+	if(lOffset < (short)lRead.length()) {
+		createNode(node, lInd, quals[lReadNum][lOffset]);
+		updateWeight(node->subnodes[lInd], quals[lReadNum][lOffset]);
+	} else {
+		createNode(node, rInd, quals[rReadNum][rOffset]);
+		updateWeight(node->subnodes[rInd], quals[rReadNum][rOffset]);
+	}
 }
 
 /** --------------- Read Processing ---------------- **/
@@ -77,28 +151,16 @@ void GTree::addReadOne(ulong readNum, short offset,
 	
 	for(uint i = offset + 1; i < reads[readNum].length(); i++) {
 		short ind = BASE_IND(reads[readNum][i]);
-		node->occs++;
-		node->weight = cumAve(node->weight, quals[readNum][i - 1], node->occs);
+		updateWeight(node, quals[readNum][i - 1]);
 		if(!(node->subnodes[ind])) {
 			createNode(node, ind, quals[readNum][i]);
-			node->subnodes[ind]->occs = 1;
+			updateWeight(node->subnodes[ind], quals[readNum][i]);
 			if(countChildren(node) == 1)
 				balanceNode(node, reads, quals);
 			return;
 		}
 		node = node->subnodes[ind];
 	}
-}
-
-short GTree::countChildren(Node *node)
-{
-	short children = 0;
-
-	for(int i = 0; i < NBASES; i++)
-		if(node->subnodes[i])
-			children++;
-
-	return children;
 }
 
 void GTree::addReadFull(ulong readNum, short offset, 
@@ -108,8 +170,7 @@ void GTree::addReadFull(ulong readNum, short offset,
 	Node *node = root;
 	
 	for(uint i = offset + 1; i < read.length(); i++) {
-		node->occs++;
-		node->weight = cumAve(node->weight, qual[i - 1], node->occs);
+		updateWeight(node, qual[i - 1]);
 		short ind = BASE_IND(read[i]);
 		if(!(node->subnodes[ind]))
 			createNode(node, ind, qual[i]);
@@ -141,63 +202,6 @@ Node* GTree::cleanBranchesNR(short offset, std::string &read)
 		nextNode = nextNode->subnodes[ind];
 	}
 	return nullptr;
-}
-
-void GTree::balanceNode(Node *node,
-		std::vector<std::string> &reads,
-		std::vector<std::string> &quals)
-{
-	// Get the offset and read before overiding/updating
-	ulong lReadNum = node->readNum;
-	std::string lRead = reads[lReadNum];
-	short lOffset = node->offset + 1;
-	short lInd = BASE_IND(lRead[lOffset]);
-	
-	// If the paths are different:
-	if(!node->subnodes[lInd]) {
-		createNode(node, lInd, quals[lReadNum][lOffset]);
-		node->subnodes[lInd]->occs = 1;
-		return;
-	}
-
-	// If the paths are literally the same:
-	if(lOffset == node->subnodes[lInd]->offset &&
-			lReadNum == node->subnodes[lInd]->readNum)
-		return;
-
-	// If the paths follow the same route:
-	// TODO:
-	ulong rReadNum = node->subnodes[lInd]->readNum;
-	std::string rRead = reads[rReadNum];
-	short rOffset = rRead[node->subnodes[lInd]->offset + 1];
-	short rInd = 0;
-	lOffset++;
-	node = node->subnodes[lInd];
-	while(lOffset < (short)lRead.length() && rOffset < (short)rRead.length()) {
-		rInd = BASE_IND(rRead[rOffset]);
-		lInd = BASE_IND(lRead[lOffset]);
-		node->occs++;
-
-		if(lRead[lOffset] != rRead[rOffset]) {
-			createNode(node, lInd, quals[lReadNum][lOffset]);
-			createNode(node, rInd, quals[rReadNum][rOffset]);
-			node->subnodes[lInd]->occs = 1;
-			node->subnodes[rInd]->occs = 1;
-			return;
-		}
-
-		lOffset++;
-		rOffset++;
-	} 
-
-	// There will be imbalances caused by running out of read length
-	if(lOffset < (short)lRead.length()) {
-		createNode(node, lInd, quals[lReadNum][lOffset]);
-		node->subnodes[lInd]->occs = 1;
-	} else {
-		createNode(node, rInd, quals[rReadNum][rOffset]);
-		node->subnodes[rInd]->occs = 1;
-	}
 }
 
 // If both occs are both 1, the remaining branch is a simple linked line

@@ -51,7 +51,7 @@ public:
 	// cleanBranches..() only needed if ..ReadFull() is used
 	void cleanBranches() { cleanBranches(root); }
 	Node* cleanBranchesNR(short offset, std::string &read);
-	void balanceNode(Node *nodes,
+	void balanceNode(Node *node,
 			std::vector<std::string> &reads,
 			std::vector<std::string> &quals);
 
@@ -65,6 +65,7 @@ private:
 	std::string occuPaths;
 
 	void createNode(Node *node, short label, char qual);
+	void updateWeight(Node *node, char qual);
 	short countChildren(Node *node);
 	void deleteTree(Node *root);
 	void deleteTreeLL(Node **node, std::string readSub);
