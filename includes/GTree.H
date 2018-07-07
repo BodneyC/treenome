@@ -7,16 +7,13 @@
 
 #define NBASES 4
 
-// Little bithack converting ACTG -> 0123
-#define BASE_IND(x) (((x) & 0xF) >> 1)
-
 #include <iostream>
 #include <string>
 #include <vector>
+#include "SeqRead.H"
 
 typedef std::vector<std::string> VecString;
 typedef unsigned long ulong;
-typedef unsigned int uint;
 
 typedef struct Node {
 	ulong occs;
@@ -31,6 +28,14 @@ typedef struct Node {
 			subnodes[i] = nullptr;
 	}
 } Node;
+
+// GTree Helpers
+namespace GTH {
+	extern std::vector<SeqRead> seqReads;
+
+	char retLabel(int label);
+	short mostOccs(Node *node);
+}
 
 // GTree class used in construction and destruction of tree
 class GTree {
@@ -98,6 +103,8 @@ typedef struct TreeTop {
 	TreeTop(const std::string &filename);
 	bool readSuccess() { return ioSuccess;  }
 	void createRoots();
+
+	void TMPTMP();
 
 	void processReadsOne();
 	void processReadsFull();

@@ -44,9 +44,11 @@ int main(int argc, char** argv)
 		std::cout << treeTop.nReads << " records found\n" << std::endl;
 	}
 
+	for(int i = 0; i < NBASES; i++)
+		treeTop.trees[i].printAllPaths(i);
 	treeTop.processReadsOne();
 	for(int i = 0; i < NBASES; i++)
-	treeTop.trees[i].printAllPaths(i);
+		treeTop.trees[i].printAllPaths(i);
 	treeTop.buildSequence();
 
 	return 0;

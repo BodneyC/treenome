@@ -1,3 +1,6 @@
+#ifndef _INP_FILE_
+#define _INP_FILE_
+
 #include <fstream>
 #include <vector>
 #include <string>
@@ -22,3 +25,5 @@ public:
 private:
 	std::string filename;
 };
+
+#endif /*_INP_FILE_*/
