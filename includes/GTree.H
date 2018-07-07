@@ -12,14 +12,11 @@
 #include <vector>
 #include "SeqRead.H"
 
-typedef std::vector<std::string> VecString;
-typedef unsigned long ulong;
-
 typedef struct Node {
-	ulong occs;
+	long occs;
 	float weight;
 	short offset;
-	ulong readNum;
+	long readNum;
 	Node* subnodes[NBASES];
 
 	Node(): occs(0), weight(0), offset(0), readNum(0)
@@ -35,6 +32,8 @@ namespace GTH {
 
 	char retLabel(int label);
 	short mostOccs(Node *node);
+	short countChildren(Node *node);
+	void updateWeight(Node *node, char qual);
 }
 
 // GTree class used in construction and destruction of tree
@@ -43,26 +42,13 @@ public:
 	~GTree() { deleteTree(root); }
 
 	/* Tree creation functions */
-	void createRoot(short ind,
-			VecString &reads,
-			VecString &quals);
-	void addReadFull(ulong readNum, short offset, 
-			std::string &read, std::string &qual);
-	void addReadOne(ulong readNum, short offset, 
-			VecString &reads,
-			VecString &quals);
-	void balanceNode(Node *node,
-			VecString &reads,
-			VecString &quals);
+	void createRoot(short ind);
+	void addReadOne(long readNum, short offset); 
+	void balanceNode(Node *node);
 
 	/* Sequence creation functions */
-	void addToSeq(ulong offset, std::string &sequence);
+	void addToSeq(long offset, std::string &sequence);
 	void followPath(Node *node, short ind, std::string &sequence);
-
-	/* Used in readFull...()s */
-	// cleanBranches..() only needed if ..ReadFull() is used
-	void cleanBranches() { cleanBranches(root); }
-	Node* cleanBranchesNR(short offset, std::string &read);
 
 	/* Usefull non-essential */
 	Node *getRoot() { if(root) return root; 
@@ -81,39 +67,26 @@ private:
 	void deleteTreeLL(Node **node, std::string readSub);
 	void deleteTree(Node *root);
 
-	/* Helper function */
-	short countChildren(Node *node);
-	void updateWeight(Node *node, char qual);
-
 	/* Public->private overloads */
-	void cleanBranches(Node *node);
 	void printAllPaths(Node *node, int len, short label);
 };
 
 // Structure which holds read data and the four GTrees
 typedef struct TreeTop {
 	std::string filename, sequence;
-	ulong nReads;
+	long nReads;
 	int readLength;
 	bool ioSuccess;
-	VecString reads; 
-	VecString quals;
 	GTree trees[NBASES];
 
-	TreeTop(const std::string &filename);
+	explicit TreeTop(const std::string &filename);
 	bool readSuccess() { return ioSuccess;  }
 	void createRoots();
-
-	void TMPTMP();
-
 	void processReadsOne();
-	void processReadsFull();
-	void processReadsFullClean();
-	void processReadsFullCleanNR();
-	void processReadsFullCleanNRBalanced();
-
 	void buildSequence();
 	short maxPath();
+	void printSequence();
+	bool rootOccsExist();
 } TreeTop;
 
 #endif /*_GTREE_*/

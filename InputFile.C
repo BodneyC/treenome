@@ -1,8 +1,6 @@
 #include "includes/InputFile.H"
 
-bool InputFile::readFastQ(
-		std::vector<std::string> &reads,
-		std::vector<std::string> &qualities)
+bool InputFile::readFastQ()
 {
 	std::string seqLine = "";
 	std::string qualLine = "";
@@ -14,19 +12,18 @@ bool InputFile::readFastQ(
 		return 0;
 	}
 
+	// Bit of a hacky way of doing this...
 	for(std::string line; std::getline(inpFile, line); i++, j++) {
 		if(i == 3)
 			readLength = line.length();
 		if(!(i % 4)) {
 			len = line.find('N');
 			line = line.substr(0, len);
-			reads.push_back(line);
 
 			seqLine = line;
 		}
 		if(!(j % 4)) {
 			line = line.substr(0, len);
-			qualities.push_back(line);
 
 			qualLine = line;
 			GTH::seqReads.push_back(SeqRead(seqLine, qualLine));

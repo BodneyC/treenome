@@ -16,7 +16,6 @@ public:
 	short size() { return sequence.size() / 2; }
 
 	void pushBase(char base);
-	short getInd(short ind);
 	short getBaseInd(short offset);
 	char getCharBase(short ind);
 
@@ -26,6 +25,8 @@ private:
 	std::vector<bool> sequence;
 	std::string qualities;
 	static char ind2base[4];
+
+	short getInd(short ind);
 };
 
 #endif /*_SEQ_READ_*/

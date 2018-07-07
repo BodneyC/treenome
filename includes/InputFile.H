@@ -14,13 +14,10 @@ class InputFile {
 public:
 	long nReads, readLength;
 
-	InputFile(const std::string &_filename):
-		filename(_filename) {}
+	explicit InputFile(const std::string &_filename):
+		nReads(0), readLength(0), filename(_filename) {}
 
-	bool readFastQ(
-			std::vector<std::string> &reads,
-			std::vector<std::string> &qualities
-	);
+	bool readFastQ();
 
 private:
 	std::string filename;

@@ -1,6 +1,5 @@
 #include "includes/GTree.H"
 
-/** --------------- Helper Functions --------------- **/
 #ifdef __MINGW64__
 #include <sstream>
 namespace mingw_fix {
@@ -13,6 +12,7 @@ namespace mingw_fix {
 }
 #endif /*__MINGW32__*/
 
+/** --------------- Helper Functions --------------- **/
 namespace GTH {
 	std::vector<SeqRead> seqReads;
 
@@ -28,14 +28,14 @@ namespace GTH {
 		case 3:
 			return 'G';
 		default: // 7 but it shouldn't
-			return 'N';
+			return 'P';
 		}
 	}
 
 	short mostOccs(Node *node)
 	{
-		short ind;
-		ulong occCnt = 0;
+		short ind = -1;
+		long occCnt = 0;
 		for(int i = 0; i < NBASES; i++) {
 			if(node->subnodes[i] && node->subnodes[i]->occs > occCnt) {
 				occCnt = node->subnodes[i]->occs;
@@ -44,26 +44,24 @@ namespace GTH {
 		}
 		return ind;
 	}
-}
 
-void GTree::updateWeight(Node *node, char qual)
-{
-	// Cumulative average: A_{n+1} = ((A_n + x_{n+1}) - A_n) / n + 1
-	node->weight += ((static_cast<float>(qual) - node->weight) / 
-			static_cast<double>(++node->occs));
-	//return curAve + 
-	//	((static_cast<float>(qual) - curAve) / static_cast<double>(occ));
-}
+	short countChildren(Node *node)
+	{
+		short children = 0;
 
-short GTree::countChildren(Node *node)
-{
-	short children = 0;
+		for(int i = 0; i < NBASES; i++)
+			if(node->subnodes[i])
+				children++;
 
-	for(int i = 0; i < NBASES; i++)
-		if(node->subnodes[i])
-			children++;
+		return children;
+	}
 
-	return children;
+	void updateWeight(Node *node, char qual)
+	{
+		// Cumulative average: A_{n+1} = ((A_n + x_{n+1}) - A_n) / n + 1
+		node->weight += ((static_cast<float>(qual) - node->weight) / 
+				static_cast<double>(++node->occs));
+	}
 }
 
 /** --------------- Genome Creation ---------------- **/
@@ -71,27 +69,30 @@ void GTree::followPath(Node *node, short ind, std::string &sequence)
 {
 	short children;
 	do {
-		children = countChildren(node);
+		children = GTH::countChildren(node);
 		sequence += GTH::retLabel(ind);
 		ind = GTH::mostOccs(node);
+		node->occs--;
+		if(ind == -1)
+			return;
 		node = node->subnodes[ind];
 	} while(children);
 }
 
-void GTree::addToSeq(ulong offset, std::string &sequence)
+void GTree::addToSeq(long offset, std::string &sequence)
 {
 	Node *node = root;
 	short ind = 0;
 	uint i, j, seqLength = sequence.length() - offset;
 	Node **path = new Node*[seqLength];
 
-	for(i = 0; i < sequence.length() - offset; i++)
+	for(i = 0; i < seqLength; i++)
 		path[i] = nullptr;
 
 	// End of current sequence	
 	for(i = offset + 1, j = 0; i < sequence.length(); i++, j++) {
 		ind = BASE_IND(sequence[i]);
-		if(node->subnodes[ind] && countChildren(node->subnodes[ind])) {
+		if(node->subnodes[ind] && GTH::countChildren(node->subnodes[ind])) {
 			path[j] = node;
 			node = node->subnodes[ind];
 		} else {
@@ -100,31 +101,35 @@ void GTree::addToSeq(ulong offset, std::string &sequence)
 		}
 	}
 
-	ind = BASE_IND(sequence[i]);
-	while(countChildren(node)) {
-		ind = GTH::mostOccs(node);
-		sequence += GTH::retLabel(ind);
-		node->occs--;
-		if(!node->subnodes[ind])
-			break;
-		node = node->subnodes[ind];
+	ind = GTH::mostOccs(node);
+	if(ind != -1) {
+		followPath(node->subnodes[ind], ind, sequence);
+		
+		// Only if something is contributed to the sequence should the 
+		// occurences be lowered
+		for(i = 0; i < seqLength; i++)
+			if(path[i]) 
+				path[i]->occs--;
 	}
-	
-	for(i = 0; i < seqLength; i++)
-		if(path[i]) 
-			path[i]->occs--;
 
 	delete[] path;
 }
 
-/** ---------------- Graph Creation ---------------- **/
-void GTree::createRoot(short ind, VecString &reads, VecString &quals)
+/** ---------------- Tree Creation ----------------- **/
+void GTree::deleteTree(Node* node)
+{
+	if(node) {
+		for(int i = 0; i < NBASES; i++)
+			deleteTree(node->subnodes[i]);
+		delete node;
+		node = nullptr;
+	}
+}
+
+void GTree::createRoot(short ind)
 {
 	root = new Node;
-	//char lab = GTH::retLabel(ind);
 
-	//for(uint i = 0; i < reads.size(); i++) {
-	//	auto offset = reads[i].find(lab, 0);
 	for(uint i = 0; i < GTH::seqReads.size(); i++) {
 		int offset = -1;
 		// Find algorithm
@@ -136,7 +141,6 @@ void GTree::createRoot(short ind, VecString &reads, VecString &quals)
 		}
 		if(offset != -1) {
 			char qual = GTH::seqReads[i].getQual(offset);
-			//char qual = quals[i][offset];
 			root->readNum = i;
 			root->offset = offset;
 			root->weight = qual;
@@ -156,27 +160,40 @@ void GTree::createNode(Node *node, short ind, char qual)
 	tmpNode->offset = node->offset + 1;
 	tmpNode->weight = qual;
 
-	// addReadFull() looses accuracy with this
-	// updateWeight(node, qual);
+	GTH::updateWeight(tmpNode, qual);
 }
 
-void GTree::balanceNode(Node *node, VecString &reads, VecString &quals)
+/** --------------- Read Processing ---------------- **/
+void GTree::addReadOne(long readNum, short offset) 
+{
+	Node *node = root;
+	SeqRead *read = &GTH::seqReads[readNum];
+	
+	for(int i = offset + 1; i < GTH::seqReads[readNum].size(); i++) {
+		short ind = (*read).getBaseInd(i);
+		GTH::updateWeight(node, (*read).getQual(i - 1));
+		if(!(node->subnodes[ind])) {
+			createNode(node, ind, (*read).getQual(i));
+			if(GTH::countChildren(node) == 1)
+				balanceNode(node);
+			return;
+		}
+		node = node->subnodes[ind];
+	}
+}
+
+void GTree::balanceNode(Node *node)
 {
 	// Get the offset and read before overiding/updating
-	ulong lReadNum = node->readNum;
-	//std::string lRead = reads[lReadNum];
+	long lReadNum = node->readNum;
 	SeqRead *lRead = &GTH::seqReads[lReadNum];
 	short lOffset = node->offset + 1;
-	//short lInd = BASE_IND(lRead[lOffset]);
 	short lInd = (*lRead).getBaseInd(lOffset);
 	char lQual = (*lRead).getQual(lOffset);
 	
 	// If the paths are different:
 	if(!node->subnodes[lInd]) {
 		createNode(node, lInd, lQual);
-		updateWeight(node->subnodes[lInd], lQual);
-		//createNode(node, lInd, quals[lReadNum][lOffset]);
-		//updateWeight(node->subnodes[lInd], quals[lReadNum][lOffset]);
 		return;
 	}
 
@@ -186,32 +203,25 @@ void GTree::balanceNode(Node *node, VecString &reads, VecString &quals)
 		return;
 
 	// If the paths follow the same route:
-	ulong rReadNum = node->subnodes[lInd]->readNum;
-	//std::string rRead = reads[rReadNum];
+	long rReadNum = node->subnodes[lInd]->readNum;
 	SeqRead *rRead = &GTH::seqReads[rReadNum];
 	short rOffset = node->subnodes[lInd]->offset + 1;
 	short rInd = 0;
 	char rQual;
 	lOffset++;
-//	while(lOffset < (short)lRead.length() && rOffset < (short)rRead.length()) {
 	while(lOffset < (*lRead).size() && rOffset < (*rRead).size()) {
 		lInd = (*lRead).getBaseInd(lOffset);
 		rInd = (*rRead).getBaseInd(rOffset);
 		lQual = (*lRead).getQual(lOffset);
 		rQual = (*rRead).getQual(rOffset);
-		//lInd = BASE_IND(lRead[lOffset]);
-		//rInd = BASE_IND(rRead[rOffset]);
 
 		node = node->subnodes[lInd];
-		updateWeight(node, lQual);
-		updateWeight(node, rQual);
+		GTH::updateWeight(node, lQual);
+		GTH::updateWeight(node, rQual);
 
-		//if(lRead[lOffset] != rRead[rOffset]) {
 		if((*rRead).getBaseInd(rOffset) != (*lRead).getBaseInd(lOffset)) {
 			createNode(node, lInd, lQual);
 			createNode(node, rInd, rQual);
-			updateWeight(node->subnodes[lInd], lQual);
-			updateWeight(node->subnodes[rInd], rQual);
 			return;
 		}
 
@@ -222,136 +232,10 @@ void GTree::balanceNode(Node *node, VecString &reads, VecString &quals)
 	// There will be imbalances caused by running out of read length
 	lQual = (*lRead).getQual(lOffset);
 	rQual = (*rRead).getQual(rOffset);
-	if(lOffset < (*lRead).size()) {
+	if(lOffset < (*lRead).size())
 		createNode(node, lInd, lQual);
-		updateWeight(node->subnodes[lInd], lQual);
-	} else {
+	else
 		createNode(node, rInd, rQual);
-		updateWeight(node->subnodes[rInd], rQual);
-	}
-}
-
-/** --------------- Read Processing ---------------- **/
-void GTree::addReadOne(ulong readNum, short offset, 
-		VecString &reads, VecString &quals)
-{
-	Node *node = root;
-	SeqRead *read = &GTH::seqReads[readNum];
-	
-	for(int i = offset + 1; i < GTH::seqReads[readNum].size(); i++) {
-		//short ind = BASE_IND(reads[readNum][i]);
-		//updateWeight(node, quals[readNum][i - 1]);
-		//if(!(node->subnodes[ind])) {
-		//	createNode(node, ind, quals[readNum][i]);
-		//	updateWeight(node->subnodes[ind], quals[readNum][i]);
-		//	if(countChildren(node) == 1)
-		//		balanceNode(node, reads, quals);
-		//	return;
-		short ind = (*read).getBaseInd(i);
-		updateWeight(node, (*read).getQual(i - 1));
-		if(!(node->subnodes[ind])) {
-			createNode(node, ind, (*read).getQual(i));
-			updateWeight(node->subnodes[ind], (*read).getQual(i));
-			if(countChildren(node) == 1)
-				balanceNode(node, reads, quals);
-			return;
-		}
-		node = node->subnodes[ind];
-	}
-}
-
-//void GTree::addReadFull(ulong readNum, short offset, 
-//		std::string &read, 
-//		std::string &qual)
-//{
-//	Node *node = root;
-//	
-//	for(uint i = offset + 1; i < read.length(); i++) {
-//		updateWeight(node, qual[i - 1]);
-//		short ind = BASE_IND(read[i]);
-//		if(!(node->subnodes[ind]))
-//			createNode(node, ind, qual[i]);
-//		node = node->subnodes[ind];
-//	}
-//}
-//
-///** ------------- None recursive calls ------------- **/
-//Node* GTree::cleanBranchesNR(short offset, std::string &read)
-//{
-//	Node *nextNode = root, *curNode;
-//
-//	// Follow path in search of branch of ones (1->1->1->1...)
-//	for(uint i = offset + 1; i < read.length(); i++) {
-//		short ind = BASE_IND(read[i]);
-//		if(nextNode->occs == 1 && 
-//				nextNode->subnodes[ind]->occs == 1) {
-//			// Delete branch of ones leaving single unique path
-//			deleteTreeLL(&nextNode->subnodes[ind], 
-//					read.substr(i, read.length()));
-//			// Count number of children of parent, 
-//			//	if only 1 then node need balancing
-//			if(countChildren(curNode) < 2) {
-//				return curNode;
-//			}
-//			break;
-//		}
-//		// Traverse path of read maintaining previous node of occs > 1
-//		curNode = nextNode;
-//		nextNode = nextNode->subnodes[ind];
-//	}
-//	return nullptr;
-//}
-//
-//// If both occs are both 1, the remaining branch is a simple linked line
-//void GTree::deleteTreeLL(Node **node, std::string readSub)
-//{
-//	Node **curNode = node;
-//	
-//	for(uint i = 0; i < readSub.length(); i++) {
-//		short ind = BASE_IND(readSub[i + 1]);
-//		Node *nextNode = (*curNode)->subnodes[ind];
-//
-//		delete *(curNode);
-//		*curNode = nullptr;
-//		*curNode = nextNode;
-//	}
-//	*curNode = nullptr;
-//}
-//
-///** -------------- Recursive Cleaning -------------- **/
-//void GTree::cleanBranches(Node *node)
-//{
-//	if(!node)
-//		return;
-//
-//	int nodeCount = 0;
-//	int ind = 0;
-//	for(int i = 0; i < NBASES; i++) {
-//		if(node->subnodes[i]) {
-//			nodeCount++;
-//			ind = i;
-//		}
-//		if(nodeCount == 2)
-//			break;
-//	}
-//	if(nodeCount == 1 && node->occs == 1 && 
-//			node->subnodes[ind]->occs == 1) {
-//		deleteTree(node->subnodes[ind]);
-//		node->subnodes[ind] = nullptr;
-//		return;
-//	} 
-//	for(int i = 0; i < NBASES; i++)
-//		cleanBranches(node->subnodes[i]);
-//}
-
-void GTree::deleteTree(Node* node)
-{
-	if(node) {
-		for(int i = 0; i < NBASES; i++)
-			deleteTree(node->subnodes[i]);
-		delete node;
-		node = nullptr;
-	}
 }
 
 /** ---------------- Path Printing ----------------- **/

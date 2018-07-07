@@ -1,8 +1,6 @@
 #include "includes/SeqRead.H"
 
-//TMPTMP
-#include <iostream>
-
+// Order important here, matches BASE_IND()
 char SeqRead::ind2base[4] = { 'A', 'C', 'T', 'G' };
 
 SeqRead::SeqRead(const std::string &read, std::string qual)
@@ -29,11 +27,6 @@ short SeqRead::getBaseInd(short offset)
 	return retVal;
 }
 
-short SeqRead::getInd(short ind)
-{
-	return ind2base[ind];
-}
-
 char SeqRead::getCharBase(short ind)
 {
 	ind = getBaseInd(ind);
@@ -43,4 +36,9 @@ char SeqRead::getCharBase(short ind)
 char SeqRead::getQual(short offset)
 {
 	return qualities[offset];
+}
+
+short SeqRead::getInd(short ind)
+{
+	return ind2base[ind];
 }
