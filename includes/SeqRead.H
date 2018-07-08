@@ -1,3 +1,16 @@
+/********************************************************************
+ * Filename: SeqRead.H [C++ header code]
+ *
+ * Description: Declaration of SeqRead class for 2-bit storage of 
+ *				bases
+ *
+ * Author: Primary - Benjamin Carrington
+ *		   Secondary - Dr. Ben Mora
+ *
+ * Organisation: Swansea University
+ * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ *
+ *******************************************************************/
 #ifndef _SEQ_READ_
 #define _SEQ_READ_
 

@@ -1,3 +1,15 @@
+/********************************************************************
+ * Filename: TreeTop.C [C++ source code]
+ *
+ * Description: Implementation of TreeTop class
+ *
+ * Author: Primary - Benjamin Carrington
+ *		   Secondary - Dr. Ben Mora
+ *
+ * Organisation: Swansea University
+ * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ *
+ *******************************************************************/
 #include "includes/GTree.H"
 #include "includes/InputFile.H"
 

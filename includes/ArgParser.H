@@ -1,3 +1,15 @@
+/********************************************************************
+ * Filename: ArgParser.H [C++ header code]
+ *
+ * Description: Simple class for command line argument parsing
+ *
+ * Author: Primary - Benjamin Carrington
+ *		   Secondary - Dr. Ben Mora
+ *
+ * Organisation: Swansea University
+ * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ *
+ *******************************************************************/
 #ifndef _ARGPARSER_
 #define _ARGPARSER_
 

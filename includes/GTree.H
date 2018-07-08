@@ -1,3 +1,16 @@
+/********************************************************************
+ * Filename: GTree.H [C++ header code]
+ *
+ * Description: Declaration of TreeTop, GTree, and Node classes/
+ *				structs
+ *
+ * Author: Primary - Benjamin Carrington
+ *		   Secondary - Dr. Ben Mora
+ *
+ * Organisation: Swansea University
+ * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ *
+ *******************************************************************/
 #ifndef _GTREE_
 #define _GTREE_
 
@@ -12,6 +25,7 @@
 #include <vector>
 #include "SeqRead.H"
 
+// The node type for the GTrees 
 typedef struct Node {
 	long occs;
 	float weight;

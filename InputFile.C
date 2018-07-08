@@ -1,3 +1,15 @@
+/********************************************************************
+ * Filename: InputFile.C [C++ source code]
+ *
+ * Description: Implementation of InputFile class
+ *
+ * Author: Primary - Benjamin Carrington
+ *		   Secondary - Dr. Ben Mora
+ *
+ * Organisation: Swansea University
+ * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ *
+ *******************************************************************/
 #include "includes/InputFile.H"
 
 bool InputFile::readFastQ()

@@ -1,3 +1,15 @@
+/********************************************************************
+ * Filename: TreeNome.C [C++ source code]
+ *
+ * Description: Entry point for TreeNome de novo DNA assembler
+ *
+ * Author: Primary - Benjamin Carrington
+ *		   Secondary - Dr. Ben Mora
+ *
+ * Organisation: Swansea University
+ * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ *
+ *******************************************************************/
 #include <fstream>
 #include "includes/ArgParser.H"
 #include "includes/InputFile.H"

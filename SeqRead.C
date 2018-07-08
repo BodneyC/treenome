@@ -1,3 +1,15 @@
+/********************************************************************
+ * Filename: SeqRead.C [C++ source code]
+ *
+ * Description: Implementation of SeqRead class
+ *
+ * Author: Primary - Benjamin Carrington
+ *		   Secondary - Dr. Ben Mora
+ *
+ * Organisation: Swansea University
+ * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ *
+ *******************************************************************/
 #include "includes/SeqRead.H"
 
 // Order important here, matches BASE_IND()
