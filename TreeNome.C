@@ -47,22 +47,23 @@ int main(int argc, char** argv)
 		return FILE_ERROR;
 	}
 
-	TreeTop treeTop(argList.iFilename);
-	bool readSuccess = treeTop.readSuccess();
-	if(!readSuccess) {
+	InputFile inpFile(argList.iFilename);
+
+	if(!inpFile.readFastQ()) {
 		std::cout << "[ERR]: Input file could not be opened" << std::endl;
 		return FILE_ERROR;
 	} else {
-		std::cout << treeTop.nReads << " records found\n" << std::endl;
+		std::cout << inpFile.nReads << " records found\n" << std::endl;
 	}
 
+	TreeTop treeTop;
+
 	treeTop.processReadsOne();
-	for(int i = 0; i < 1; i++)
-		treeTop.trees[i].printAllPaths(i);
+	//for(int i = 0; i < NBASES; i++)
+	//	treeTop.trees[i].printAllPaths(i);
 	treeTop.buildSequence();
 	treeTop.printSequence();
-	for(int i = 0; i < 1; i++)
-		treeTop.trees[i].printAllPaths(i);
+	treeTop.printTrees();
 
 	return 0;
 }

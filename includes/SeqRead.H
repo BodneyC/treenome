@@ -38,8 +38,6 @@ private:
 	std::vector<bool> sequence;
 	std::string qualities;
 	static char ind2base[4];
-
-	short getInd(short ind);
 };
 
 #endif /*_SEQ_READ_*/

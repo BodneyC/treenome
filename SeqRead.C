@@ -50,7 +50,3 @@ char SeqRead::getQual(short offset)
 	return qualities[offset];
 }
 
-short SeqRead::getInd(short ind)
-{
-	return ind2base[ind];
-}

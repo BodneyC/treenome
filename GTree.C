@@ -265,23 +265,7 @@ void GTree::printAllPaths(Node *node, int len, short label)
     occuPaths += val;
 	occuPaths += "-";
 	basePaths.erase(len, basePaths.length());
-	switch (label) {
-	case 0:
-		basePaths += 'A';
-		break;
-	case 1:
-		basePaths += 'C';
-		break;
-	case 2:
-		basePaths += 'T';
-		break;
-	case 3:
-		basePaths += 'G';
-		break;
-	default: // Shouldn't occur
-		basePaths += 'N';
-		break;
-	}
+	basePaths += GTH::retLabel(label);
 	for(uint i = 0; i < val.length(); i++)
 		basePaths += '-';
 	len += val.length() + 1;
@@ -291,9 +275,9 @@ void GTree::printAllPaths(Node *node, int len, short label)
 			check = true;
     if(!check) {
 		occuPaths.erase(occuPaths.length() - 1);
-		std::cout << occuPaths << std::endl;
+		std::cout << occuPaths << ": EOS" << std::endl;
 		basePaths.erase(basePaths.length() - 1);
-		std::cout << basePaths << "\n" << std::endl;
+		std::cout << basePaths << ": EOS\n" << std::endl;
         return;
     }
 	for(int i = 0; i < NBASES; i++)

@@ -13,14 +13,9 @@
 #include "includes/GTree.H"
 #include "includes/InputFile.H"
 
-TreeTop::TreeTop(const std::string &_filename): 
-	filename(_filename), sequence(""), nReads(0), readLength(0), ioSuccess(0)
+TreeTop::TreeTop(): 
+	sequence(""), nReads(0), readLength(0)
 {
-	InputFile iFile(filename);
-	ioSuccess = iFile.readFastQ();
-	nReads = iFile.nReads;
-	readLength = iFile.readLength;
-
 	for(int i = 0; i < NBASES; i++)
 		trees[i].createRoot(i);
 }
@@ -67,15 +62,13 @@ void TreeTop::buildSequence()
 		if((unsigned) offset == sequence.length() - 1) {
 			sequence += 'N';
 			maxPath();
-
-			offset++;
+			offset += 2;
 		}
 
 		if(trees[BASE_IND(sequence[offset])].getRoot()->occs > 0)
 			trees[BASE_IND(sequence[offset])].addToSeq(offset, sequence);
 		offset++;
 	}
-	std::cout << sequence << std::endl;
 }
 
 /** --------------- Read Processing ---------------- **/
@@ -87,6 +80,12 @@ void TreeTop::processReadsOne()
 }
 
 /** --------------- Misc Functions ----------------- **/
+void TreeTop::printTrees()
+{
+	for(int i = 0; i < NBASES; i++)
+		trees[i].printAllPaths(i);
+}
+
 void TreeTop::printSequence()
 {
 	// 80 for terminal width's sake

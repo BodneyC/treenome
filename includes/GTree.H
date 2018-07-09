@@ -87,20 +87,20 @@ private:
 
 // Structure which holds read data and the four GTrees
 typedef struct TreeTop {
-	std::string filename, sequence;
+	std::string sequence;
 	long nReads;
 	int readLength;
-	bool ioSuccess;
 	GTree trees[NBASES];
 
-	explicit TreeTop(const std::string &filename);
-	bool readSuccess() { return ioSuccess;  }
+	TreeTop();
+
 	void createRoots();
 	void processReadsOne();
 	void buildSequence();
 	short maxPath();
-	void printSequence();
 	bool rootOccsExist();
+	void printSequence();
+	void printTrees();
 } TreeTop;
 
 #endif /*_GTREE_*/
