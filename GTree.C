@@ -76,6 +76,18 @@ namespace GTH {
 	}
 }
 
+/** ------------- GTree Cons and Dees -------------- **/
+GTree::GTree(): 
+	root(nullptr), head(0), nodesCnt(0), basePaths(""), occuPaths("")
+{ 
+	// Because reallocation of std::vectors is assured if its class is a 
+	// std::vector, a vector of vectors has been used with a 1-by-1 
+	// .push_back()
+	nodes.resize(1);
+	nodes[nodesCnt].resize(RES);
+}
+
+
 /** --------------- Genome Creation ---------------- **/
 void GTree::followPath(Node *node, short ind, std::string &sequence)
 {
@@ -128,19 +140,10 @@ void GTree::addToSeq(long offset, std::string &sequence)
 }
 
 /** ---------------- Tree Creation ----------------- **/
-void GTree::deleteTree(Node* node)
-{
-	if(node) {
-		for(int i = 0; i < NBASES; i++)
-			deleteTree(node->subnodes[i]);
-		delete node;
-		node = nullptr;
-	}
-}
-
 void GTree::createRoot(short ind)
 {
-	root = new Node;
+	root = &(nodes[nodesCnt][head]);
+	head++;
 
 	for(uint i = 0; i < GTH::seqReads.size(); i++) {
 		int offset = -1;
@@ -164,10 +167,17 @@ void GTree::createRoot(short ind)
 
 void GTree::createNode(Node *node, short ind, char qual)
 {
-	node->subnodes[ind] = new Node;
-	Node *tmpNode = node->subnodes[ind];
+	if(nodes[nodesCnt].size() == head) {
+		std::vector<Node> tmpVec(RES);
+		nodes.push_back(tmpVec);
+		nodesCnt++;
+		head = 0;
+	}
+	node->subnodes[ind] = &(nodes[nodesCnt][head]);
+	head++;
 
 	// Doesn't set occs as addRead...() will do that
+	Node *tmpNode = node->subnodes[ind];
 	tmpNode->readNum = node->readNum;
 	tmpNode->offset = node->offset + 1;
 	tmpNode->weight = qual;

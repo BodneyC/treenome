@@ -19,6 +19,7 @@
 #endif /*c++11 check*/
 
 #define NBASES 4
+#define RES 500
 
 #include <iostream>
 #include <string>
@@ -53,7 +54,8 @@ namespace GTH {
 // GTree class used in construction and destruction of tree
 class GTree {
 public:
-	~GTree() { deleteTree(root); }
+	GTree();
+	~GTree() {  }
 
 	/* Tree creation functions */
 	void createRoot(short ind);
@@ -73,13 +75,13 @@ public:
 	}
 private:
 	Node* root;
+	unsigned long head, nodesCnt;
+	std::vector< std::vector<Node> > nodes;
 	std::string basePaths;
 	std::string occuPaths;
 
 	/* Creation/destruction */
 	void createNode(Node *node, short label, char qual);
-	void deleteTreeLL(Node **node, std::string readSub);
-	void deleteTree(Node *root);
 
 	/* Public->private overloads */
 	void printAllPaths(Node *node, int len, short label);
