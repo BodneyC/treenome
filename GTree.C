@@ -49,8 +49,9 @@ namespace GTH {
 		short ind = -1;
 		long occCnt = 0;
 		for(int i = 0; i < NBASES; i++) {
-			if(node->subnodes[i] && node->subnodes[i]->occs > occCnt) {
-				occCnt = node->subnodes[i]->occs;
+			Node* tmpNode = node->subnodes[i];
+			if(tmpNode && tmpNode->occs > occCnt) {
+				occCnt = tmpNode->occs;
 				ind = i;
 			}
 		}
@@ -142,7 +143,7 @@ void GTree::addToSeq(long offset, std::string &sequence)
 /** ---------------- Tree Creation ----------------- **/
 void GTree::createRoot(short ind)
 {
-	root = &(nodes[nodesCnt][head]);
+	Node* tmpNode = &(nodes[nodesCnt][head]);
 	head++;
 
 	for(uint i = 0; i < GTH::seqReads.size(); i++) {
@@ -156,9 +157,10 @@ void GTree::createRoot(short ind)
 		}
 		if(offset != -1) {
 			char qual = GTH::seqReads[i].getQual(offset);
-			root->readNum = i;
-			root->offset = offset;
-			root->weight = qual;
+			tmpNode->readNum = i;
+			tmpNode->offset = offset;
+			tmpNode->weight = qual;
+			root.store(tmpNode);
 			// Doesn't set occs as addRead...() will do that
 			return;
 		}
@@ -220,14 +222,15 @@ void GTree::balanceNode(Node *node)
 	}
 
 	// If the paths are literally the same:
-	if(lOffset == node->subnodes[lInd]->offset &&
-			lReadNum == node->subnodes[lInd]->readNum)
+	Node* lNode = node->subnodes[lInd];
+	if(lOffset == lNode->offset &&
+			lReadNum == lNode->readNum)
 		return;
 
 	// If the paths follow the same route:
-	long rReadNum = node->subnodes[lInd]->readNum;
+	long rReadNum = lNode->readNum;
 	SeqRead *rRead = &GTH::seqReads[rReadNum];
-	short rOffset = node->subnodes[lInd]->offset + 1;
+	short rOffset = lNode->offset + 1;
 	short rInd = 0;
 	char rQual;
 	lOffset++;

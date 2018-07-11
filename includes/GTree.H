@@ -21,6 +21,7 @@
 #define NBASES 4
 #define RES 500
 
+#include <atomic>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -32,13 +33,12 @@ typedef struct Node {
 	float weight;
 	short offset;
 	long readNum;
-	Node* subnodes[NBASES];
+	std::atomic<Node*> subnodes[NBASES];
 
-	Node(): occs(0), weight(0), offset(0), readNum(0)
-	{
-		for(int i = 0; i < NBASES; i++)
-			subnodes[i] = nullptr;
-	}
+	Node();
+	//Copy and assignment functions needed for atomics
+	Node(const Node& tmpNode);
+	Node& operator=(const Node& tmpNode);
 } Node;
 
 // GTree Helpers
@@ -74,7 +74,7 @@ public:
 		basePaths = occuPaths = "";
 	}
 private:
-	Node* root;
+	std::atomic<Node*> root;
 	unsigned long head, nodesCnt;
 	std::vector< std::vector<Node> > nodes;
 	std::string basePaths;
