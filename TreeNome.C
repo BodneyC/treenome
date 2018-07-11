@@ -12,53 +12,42 @@
  *******************************************************************/
 /* TODO:
  * - Pre-processing of reads, consider qualities in this
- * - Either move to TCLAP or update ArgParser a little to fill CMDArgs
  * - Quality vs. occurrences in sequence creation
  * - put() function in SeqRead
  * - Output file for printTrees() and printSequence()
  */
-#include <fstream>
 #include "includes/ArgParser.H"
 #include "includes/InputFile.H"
 #include "includes/GTree.H"
 
-#define USAGE_ERROR -1
-
-struct CMDArgs {
-	std::string iFilename;
-	bool printToScreen;
-	bool preProcess;
-};
-
 void argHelp()
 {
 	std::cout << "\nCommand usage: \n\n"
-		"\t""./TreeNome [-f ./path/to/file]"
-		"Where:\n\n"
+		"\t""./TreeNome [-f ./path/to/file] [-o] [-p]"
+		"\nWhere:\n\n"
 		"\t""-f <string>\n"
-		"\t Path to input file (fastq format)\n" << std::endl;
+		"\t   Path to input file (fastq format)\n\n"
+		"\t""-o\n"
+		"\t   Output to screen\n\n"
+		"\t""-p\n"
+		"\t   Perform pre-processing\n" << std::endl;
 }
 
 int main(int argc, char** argv)
 {
 	ArgParser argParser(argc, argv);
 	struct CMDArgs argList;
+	int argSucc = argParser.fillArgs(argList);
 
-	if(argParser.argExists("-h")) {
+	if(argSucc == USAGE_ERROR) {
 		argHelp();
 		return USAGE_ERROR;
 	}
-	if(argParser.argExists("-f")) {
-		argList.iFilename = argParser.stringOption("-f");
-	} else {
+	if(argSucc == FILE_ERROR) {
 		std::cout << "[ERR]: Input file not supplied" << std::endl;
 		argHelp();
-		return FILE_ERROR;
+		return USAGE_ERROR;
 	}
-	if(argParser.argExists("-p"))
-		argList.printToScreen = 1;
-	if(argParser.argExists("-c"))\
-		argList.preProcess = 1;
 
 	InputFile inpFile(argList.iFilename);
 	if(!inpFile.readFastQ()) {
