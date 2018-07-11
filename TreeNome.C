@@ -10,6 +10,13 @@
  * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
+/* TODO:
+ * - Pre-processing of reads, consider qualities in this
+ * - Either move to TCLAP or update ArgParser a little to fill CMDArgs
+ * - Quality vs. occurrences in sequence creation
+ * - put() function in SeqRead
+ * - Output file for printTrees() and printSequence()
+ */
 #include <fstream>
 #include "includes/ArgParser.H"
 #include "includes/InputFile.H"
@@ -19,6 +26,8 @@
 
 struct CMDArgs {
 	std::string iFilename;
+	bool printToScreen;
+	bool preProcess;
 };
 
 void argHelp()
@@ -46,9 +55,12 @@ int main(int argc, char** argv)
 		argHelp();
 		return FILE_ERROR;
 	}
+	if(argParser.argExists("-p"))
+		argList.printToScreen = 1;
+	if(argParser.argExists("-c"))\
+		argList.preProcess = 1;
 
 	InputFile inpFile(argList.iFilename);
-
 	if(!inpFile.readFastQ()) {
 		std::cout << "[ERR]: Input file could not be opened" << std::endl;
 		return FILE_ERROR;
@@ -57,13 +69,15 @@ int main(int argc, char** argv)
 	}
 
 	TreeTop treeTop;
-
+	//if(argList.preProcess)
+	//	treeTop.preProcess();
 	treeTop.processReadsOne();
-	//for(int i = 0; i < NBASES; i++)
-	//	treeTop.trees[i].printAllPaths(i);
+	if(argList.printToScreen)
+		treeTop.printTrees();
 	treeTop.buildSequence();
 	treeTop.printSequence();
-	treeTop.printTrees();
+	//if(argList.printToScreen)
+	//treeTop.printTrees();
 
 	return 0;
 }
