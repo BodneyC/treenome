@@ -27,6 +27,7 @@ namespace mingw_fix {
 /** --------------- Helper Functions --------------- **/
 namespace GTH {
 	std::vector<SeqRead> seqReads;
+	std::mutex genMut;
 
 	char retLabel(int label)
 	{
@@ -69,11 +70,11 @@ namespace GTH {
 		return children;
 	}
 
-	void updateWeight(Node *node, char qual)
+	float updateWeight(float curWeight, long occs, char qual)
 	{
 		// Cumulative average: A_{n+1} = ((A_n + x_{n+1}) - A_n) / n + 1
-		node->weight += ((static_cast<float>(qual) - node->weight) / 
-				static_cast<double>(++node->occs));
+		return curWeight += ((static_cast<float>(qual) - curWeight) /
+				static_cast<double>(occs));
 	}
 }
 
@@ -88,6 +89,150 @@ GTree::GTree():
 	nodes[nodesCnt].resize(RES);
 }
 
+/** ---------------- Tree Creation ----------------- **/
+void GTree::createRoot(short ind)
+{
+	Node* tmpNode = &(nodes[nodesCnt][head]);
+	head++;
+
+	for(uint i = 0; i < GTH::seqReads.size(); i++) {
+		int offset = -1;
+		// Find algorithm
+		for(int j = 0; j < GTH::seqReads[i].size(); j++) {
+			if(GTH::seqReads[i].getBaseInd(j) == ind) {
+				offset = j;
+				break;
+			}
+		}
+		if(offset != -1) {
+			char qual = GTH::seqReads[i].getQual(offset);
+			tmpNode->readNum = i;
+			tmpNode->offset = offset;
+			tmpNode->weight = qual;
+			root.store(tmpNode);
+			// Doesn't set occs as addRead...() will do that
+			return;
+		}
+	}
+}
+
+void GTree::createNode(Node *node, short ind, char qual)
+{
+	if(nodes[nodesCnt].size() == head) {
+		std::vector<Node> tmpVec(RES);
+		nodes.push_back(tmpVec);
+		nodesCnt++;
+		head = 0;
+	}
+	node->subnodes[ind] = &(nodes[nodesCnt][head]);
+	head++;
+
+	Node *tmpNode = node->subnodes[ind];
+	tmpNode->readNum = node->readNum;
+	tmpNode->offset = node->offset + 1;
+	tmpNode->weight = qual;
+	tmpNode->occs = 1;
+}
+
+/** --------------- Read Processing ---------------- **/
+void GTree::addReadOne(long readNum, short offset) 
+{
+	Node *node = root;
+	SeqRead *read = &GTH::seqReads[readNum];
+	float curWeight, newWeight;
+	bool retBool = 0;
+	
+	for(int i = offset + 1; i < GTH::seqReads[readNum].size(); i++) {
+		short ind = (*read).getBaseInd(i);
+		/////////////////////////////////////////////////
+		// occs++ is atomic
+		node->occs++;
+		// while curWeight != node->weight, retreive current weight again
+		do {
+			curWeight = node->weight;
+			newWeight = GTH::updateWeight(curWeight, node->occs, (*read).getQual(i - 1));
+		} while(!(node->weight.compare_exchange_weak(curWeight, newWeight)));
+		/////////////////////////////////////////////////
+		{
+			std::lock_guard<std::mutex> rpLock(GTH::genMut);
+			if(!(node->subnodes[ind])) {
+				createNode(node, ind, (*read).getQual(i));
+				if(GTH::countChildren(node) == 1)
+					balanceNode(node);
+				retBool = 1;
+			}
+		}
+		if(retBool == 1)
+			return;
+		node = node->subnodes[ind];
+	}
+}
+
+void GTree::balanceNode(Node *node)
+{
+	// Get the offset and read before overiding/updating
+	long lReadNum = node->readNum;
+	SeqRead *lRead = &GTH::seqReads[lReadNum];
+	short lOffset = node->offset + 1;
+	short lInd = (*lRead).getBaseInd(lOffset);
+	char lQual = (*lRead).getQual(lOffset);
+	
+	// If the paths are different:
+	if(!node->subnodes[lInd]) {
+		createNode(node, lInd, lQual);
+		return;
+	}
+
+	// If the paths are literally the same:
+	Node* lNode = node->subnodes[lInd];
+	if(lOffset == lNode->offset &&
+			lReadNum == lNode->readNum)
+		return;
+
+	// If the paths follow the same route:
+	long rReadNum = lNode->readNum;
+	float curWeight, newWeight;
+	SeqRead *rRead = &GTH::seqReads[rReadNum];
+	short rOffset = lNode->offset + 1;
+	short rInd = 0;
+	char rQual;
+	lOffset++;
+	while(lOffset < (*lRead).size() && rOffset < (*rRead).size()) {
+		lInd = (*lRead).getBaseInd(lOffset);
+		rInd = (*rRead).getBaseInd(rOffset);
+		lQual = (*lRead).getQual(lOffset);
+		rQual = (*rRead).getQual(rOffset);
+
+		node = node->subnodes[lInd];
+		node->occs += 2;
+		// while curWeight != node->weight, retreive current weight again
+		do {
+			curWeight = node->weight;
+			newWeight = GTH::updateWeight(curWeight, node->occs, rQual);
+		} while(!(node->weight.compare_exchange_weak(curWeight, newWeight)));
+		do {
+			curWeight = node->weight;
+			newWeight = GTH::updateWeight(curWeight, node->occs, lQual);
+		} while(!(node->weight.compare_exchange_weak(curWeight, newWeight)));
+
+		if((*rRead).getBaseInd(rOffset) != (*lRead).getBaseInd(lOffset)) {
+			createNode(node, lInd, lQual);
+			createNode(node, rInd, rQual);
+			return;
+		}
+
+		lOffset++;
+		rOffset++;
+	} 
+
+	// There will be imbalances caused by running out of read length
+	lQual = (*lRead).getQual(lOffset);
+	rQual = (*rRead).getQual(rOffset);
+	if(lOffset < (*lRead).size())
+		createNode(node, lInd, lQual);
+	else
+		createNode(node, rInd, rQual);
+}
 
 /** --------------- Genome Creation ---------------- **/
 void GTree::followPath(Node *node, short ind, std::string &sequence)
@@ -138,129 +283,6 @@ void GTree::addToSeq(long offset, std::string &sequence)
 	}
 
 	delete[] path;
-}
-
-/** ---------------- Tree Creation ----------------- **/
-void GTree::createRoot(short ind)
-{
-	Node* tmpNode = &(nodes[nodesCnt][head]);
-	head++;
-
-	for(uint i = 0; i < GTH::seqReads.size(); i++) {
-		int offset = -1;
-		// Find algorithm
-		for(int j = 0; j < GTH::seqReads[i].size(); j++) {
-			if(GTH::seqReads[i].getBaseInd(j) == ind) {
-				offset = j;
-				break;
-			}
-		}
-		if(offset != -1) {
-			char qual = GTH::seqReads[i].getQual(offset);
-			tmpNode->readNum = i;
-			tmpNode->offset = offset;
-			tmpNode->weight = qual;
-			root.store(tmpNode);
-			// Doesn't set occs as addRead...() will do that
-			return;
-		}
-	}
-}
-
-void GTree::createNode(Node *node, short ind, char qual)
-{
-	if(nodes[nodesCnt].size() == head) {
-		std::vector<Node> tmpVec(RES);
-		nodes.push_back(tmpVec);
-		nodesCnt++;
-		head = 0;
-	}
-	node->subnodes[ind] = &(nodes[nodesCnt][head]);
-	head++;
-
-	// Doesn't set occs as addRead...() will do that
-	Node *tmpNode = node->subnodes[ind];
-	tmpNode->readNum = node->readNum;
-	tmpNode->offset = node->offset + 1;
-	tmpNode->weight = qual;
-
-	GTH::updateWeight(tmpNode, qual);
-}
-
-/** --------------- Read Processing ---------------- **/
-void GTree::addReadOne(long readNum, short offset) 
-{
-	Node *node = root;
-	SeqRead *read = &GTH::seqReads[readNum];
-	
-	for(int i = offset + 1; i < GTH::seqReads[readNum].size(); i++) {
-		short ind = (*read).getBaseInd(i);
-		GTH::updateWeight(node, (*read).getQual(i - 1));
-		if(!(node->subnodes[ind])) {
-			createNode(node, ind, (*read).getQual(i));
-			if(GTH::countChildren(node) == 1)
-				balanceNode(node);
-			return;
-		}
-		node = node->subnodes[ind];
-	}
-}
-
-void GTree::balanceNode(Node *node)
-{
-	// Get the offset and read before overiding/updating
-	long lReadNum = node->readNum;
-	SeqRead *lRead = &GTH::seqReads[lReadNum];
-	short lOffset = node->offset + 1;
-	short lInd = (*lRead).getBaseInd(lOffset);
-	char lQual = (*lRead).getQual(lOffset);
-	
-	// If the paths are different:
-	if(!node->subnodes[lInd]) {
-		createNode(node, lInd, lQual);
-		return;
-	}
-
-	// If the paths are literally the same:
-	Node* lNode = node->subnodes[lInd];
-	if(lOffset == lNode->offset &&
-			lReadNum == lNode->readNum)
-		return;
-
-	// If the paths follow the same route:
-	long rReadNum = lNode->readNum;
-	SeqRead *rRead = &GTH::seqReads[rReadNum];
-	short rOffset = lNode->offset + 1;
-	short rInd = 0;
-	char rQual;
-	lOffset++;
-	while(lOffset < (*lRead).size() && rOffset < (*rRead).size()) {
-		lInd = (*lRead).getBaseInd(lOffset);
-		rInd = (*rRead).getBaseInd(rOffset);
-		lQual = (*lRead).getQual(lOffset);
-		rQual = (*rRead).getQual(rOffset);
-
-		node = node->subnodes[lInd];
-		GTH::updateWeight(node, lQual);
-		GTH::updateWeight(node, rQual);
-
-		if((*rRead).getBaseInd(rOffset) != (*lRead).getBaseInd(lOffset)) {
-			createNode(node, lInd, lQual);
-			createNode(node, rInd, rQual);
-			return;
-		}
-
-		lOffset++;
-		rOffset++;
-	} 
-
-	// There will be imbalances caused by running out of read length
-	lQual = (*lRead).getQual(lOffset);
-	rQual = (*rRead).getQual(rOffset);
-	if(lOffset < (*lRead).size())
-		createNode(node, lInd, lQual);
-	else
-		createNode(node, rInd, rQual);
 }
 
 /** ---------------- Path Printing ----------------- **/

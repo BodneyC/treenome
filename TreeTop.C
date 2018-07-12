@@ -13,11 +13,33 @@
 #include "includes/GTree.H"
 #include "includes/InputFile.H"
 
+// TreeTop Helpers
+namespace TTH {
+	std::thread thrPool[NUM_THREADS];
+}
+
 TreeTop::TreeTop(): 
 	sequence(""), nReads(0), readLength(0)
 {
 	for(int i = 0; i < NBASES; i++)
 		trees[i].createRoot(i);
+}
+
+/** --------------- Read Processing ---------------- **/
+void TreeTop::threadFunc(unsigned long i)
+{
+	for(short j = 0; j < GTH::seqReads[i].size(); j++)
+		trees[GTH::seqReads[i].getBaseInd(j)].addReadOne(i, j);
+}
+
+void TreeTop::processReadsOne()
+{
+	for(unsigned long i = 0; i < GTH::seqReads.size(); i += NUM_THREADS) {
+		for(int j = 0; j < NUM_THREADS; j++)
+			TTH::thrPool[j] = std::thread(&TreeTop::threadFunc, this, i + j);
+		for(int j = 0; j < NUM_THREADS; j++)
+			TTH::thrPool[j].join();
+	}
 }
 
 /** ------------- Sequence Generation -------------- **/
@@ -69,14 +91,6 @@ void TreeTop::buildSequence()
 			trees[BASE_IND(sequence[offset])].addToSeq(offset, sequence);
 		offset++;
 	}
-}
-
-/** --------------- Read Processing ---------------- **/
-void TreeTop::processReadsOne()
-{
-	for(unsigned long i = 0; i < GTH::seqReads.size(); i++)
-		for(short j = 0; j < GTH::seqReads[i].size(); j++)
-			trees[GTH::seqReads[i].getBaseInd(j)].addReadOne(i, j);
 }
 
 /** --------------- Misc Functions ----------------- **/

@@ -20,8 +20,11 @@
 
 #define NBASES 4
 #define RES 500
+#define NUM_THREADS 2
 
 #include <atomic>
+#include <mutex>
+#include <thread>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -29,11 +32,11 @@
 
 // The node type for the GTrees 
 typedef struct Node {
-	long occs;
-	float weight;
+	std::atomic<long> occs;
+	std::atomic<float> weight;
 	short offset;
 	long readNum;
-	std::atomic<Node*> subnodes[NBASES];
+	Node* subnodes[NBASES];
 
 	Node();
 	//Copy and assignment functions needed for atomics
@@ -44,11 +47,12 @@ typedef struct Node {
 // GTree Helpers
 namespace GTH {
 	extern std::vector<SeqRead> seqReads;
+	extern std::mutex genMut;
 
 	char retLabel(int label);
 	short mostOccs(Node *node);
 	short countChildren(Node *node);
-	void updateWeight(Node *node, char qual);
+	float updateWeight(Node *node, char qual);
 }
 
 // GTree class used in construction and destruction of tree
@@ -97,6 +101,7 @@ typedef struct TreeTop {
 	TreeTop();
 
 	void createRoots();
+	void threadFunc(unsigned long readNum);
 	void processReadsOne();
 	void buildSequence();
 	short maxPath();
