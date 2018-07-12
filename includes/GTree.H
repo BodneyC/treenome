@@ -47,7 +47,6 @@ typedef struct Node {
 // GTree Helpers
 namespace GTH {
 	extern std::vector<SeqRead> seqReads;
-	extern std::mutex genMut;
 
 	char retLabel(int label);
 	short mostOccs(Node *node);
@@ -83,6 +82,7 @@ private:
 	std::vector< std::vector<Node> > nodes;
 	std::string basePaths;
 	std::string occuPaths;
+	std::mutex gtMut;
 
 	/* Creation/destruction */
 	void createNode(Node *node, short label, char qual);

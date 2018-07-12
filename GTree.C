@@ -154,7 +154,7 @@ void GTree::addReadOne(long readNum, short offset)
 		} while(!(node->weight.compare_exchange_weak(curWeight, newWeight)));
 		/////////////////////////////////////////////////
 		{
-			std::lock_guard<std::mutex> rpLock(GTH::genMut);
+			std::lock_guard<std::mutex> rpLock(gtMut);
 			if(!(node->subnodes[ind])) {
 				createNode(node, ind, (*read).getQual(i));
 				if(GTH::countChildren(node) == 1)
@@ -162,6 +162,7 @@ void GTree::addReadOne(long readNum, short offset)
 				retBool = 1;
 			}
 		}
+		/////////////////////////////////////////////////
 		if(retBool == 1)
 			return;
 		node = node->subnodes[ind];
