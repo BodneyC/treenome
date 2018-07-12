@@ -24,6 +24,8 @@ struct CMDArgs {
 	std::string iFilename;
 	bool printToScreen;
 	bool preProcess;
+
+	CMDArgs(): iFilename(""), printToScreen(0), preProcess(0) {  }
 };
 
 class ArgParser {

@@ -14,10 +14,6 @@
 #ifndef _GTREE_
 #define _GTREE_
 
-#if __cplusplus < 201103L
-#define nullptr 0
-#endif /*c++11 check*/
-
 #define NBASES 4
 #define RES 500
 #define NUM_THREADS 2
@@ -37,6 +33,7 @@ typedef struct Node {
 	short offset;
 	long readNum;
 	Node* subnodes[NBASES];
+	std::mutex nodeMut;
 
 	Node();
 	//Copy and assignment functions needed for atomics
@@ -82,7 +79,7 @@ private:
 	std::vector< std::vector<Node> > nodes;
 	std::string basePaths;
 	std::string occuPaths;
-	std::mutex gtMut;
+	std::mutex gtMut[2];
 
 	/* Creation/destruction */
 	void createNode(Node *node, short label, char qual);
@@ -101,7 +98,7 @@ typedef struct TreeTop {
 	TreeTop();
 
 	void createRoots();
-	void threadFunc(unsigned long readNum);
+	void threadFunc(unsigned long i);
 	void processReadsOne();
 	void buildSequence();
 	short maxPath();

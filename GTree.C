@@ -27,7 +27,6 @@ namespace mingw_fix {
 /** --------------- Helper Functions --------------- **/
 namespace GTH {
 	std::vector<SeqRead> seqReads;
-	std::mutex genMut;
 
 	char retLabel(int label)
 	{
@@ -154,7 +153,7 @@ void GTree::addReadOne(long readNum, short offset)
 		} while(!(node->weight.compare_exchange_weak(curWeight, newWeight)));
 		/////////////////////////////////////////////////
 		{
-			std::lock_guard<std::mutex> rpLock(gtMut);
+			std::lock_guard<std::mutex> rpLock(node->nodeMut);
 			if(!(node->subnodes[ind])) {
 				createNode(node, ind, (*read).getQual(i));
 				if(GTH::countChildren(node) == 1)
@@ -179,9 +178,11 @@ void GTree::balanceNode(Node *node)
 	char lQual = (*lRead).getQual(lOffset);
 	
 	// If the paths are different:
-	if(!node->subnodes[lInd]) {
-		createNode(node, lInd, lQual);
-		return;
+	{
+		if(!node->subnodes[lInd]) {
+			createNode(node, lInd, lQual);
+			return;
+		}
 	}
 
 	// If the paths are literally the same:
@@ -205,7 +206,7 @@ void GTree::balanceNode(Node *node)
 		rQual = (*rRead).getQual(rOffset);
 
 		node = node->subnodes[lInd];
-		node->occs += 2;
+		node->occs.fetch_add(2);
 		// while curWeight != node->weight, retreive current weight again
 		do {
 			curWeight = node->weight;
