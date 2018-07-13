@@ -28,12 +28,17 @@ TreeTop::TreeTop():
 /** --------------- Read Processing ---------------- **/
 void TreeTop::threadFunc(unsigned long i)
 {
-	for(short j = 0; j < GTH::seqReads[i].size(); j++)
+	for(short j = 0; j < 2; j++)//GTH::seqReads[i].size(); j++)
 		trees[GTH::seqReads[i].getBaseInd(j)].addReadOne(i, j);
 }
 
 void TreeTop::processReadsOne()
 {
+	// Extra seqReads' to match NUM_THREADS
+	if(GTH::seqReads.size() % NUM_THREADS) {
+		for(unsigned int i = 0; i < NUM_THREADS - (GTH::seqReads.size() % NUM_THREADS); i++)
+			GTH::seqReads.push_back(SeqRead());
+	}
 	for(unsigned long i = 0; i < GTH::seqReads.size(); i += NUM_THREADS) {
 		for(int j = 0; j < NUM_THREADS; j++)
 			TTH::thrPool[j] = std::thread(&TreeTop::threadFunc, this, i + j);

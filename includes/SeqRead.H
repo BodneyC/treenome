@@ -24,6 +24,7 @@ typedef unsigned int uint;
 
 class SeqRead {
 public:
+	SeqRead(): qualities("") {  }
 	explicit SeqRead(const std::string &read, std::string qual);
 
 	short size() { return sequence.size() / 2; }

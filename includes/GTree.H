@@ -14,6 +14,10 @@
 #ifndef _GTREE_
 #define _GTREE_
 
+#if __cplusplus < 201103L
+#error This code requires C++11 for threading
+#endif /*c++11 check*/
+
 #define NBASES 4
 #define RES 500
 #define NUM_THREADS 2

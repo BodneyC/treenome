@@ -157,7 +157,7 @@ void GTree::addReadOne(long readNum, short offset)
 			if(!(node->subnodes[ind])) {
 				createNode(node, ind, (*read).getQual(i));
 				if(GTH::countChildren(node) == 1)
-					balanceNode(node);
+				{}//balanceNode(node);
 				retBool = 1;
 			}
 		}

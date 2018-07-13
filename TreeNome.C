@@ -11,6 +11,8 @@
  *
  *******************************************************************/
 /* TODO:
+ * - Data race or algorithm?
+ * - Derive leafNode from Node (somehow)
  * - Pre-processing of reads, consider qualities in this
  * - Quality vs. occurrences in sequence creation
  * - put() function in SeqRead
@@ -23,13 +25,13 @@
 void argHelp()
 {
 	std::cout << "\nCommand usage: \n\n"
-		"\t""./TreeNome [-f ./path/to/file] [-o] [-p]"
+		"\t  ./TreeNome [-f ./path/to/file] [-o] [-p]"
 		"\nWhere:\n\n"
-		"\t""-f <string>\n"
+		"\t  -f <string>\n"
 		"\t   Path to input file (fastq format)\n\n"
-		"\t""-o\n"
+		"\t  -o\n"
 		"\t   Output to screen\n\n"
-		"\t""-p\n"
+		"\t  -p\n"
 		"\t   Perform pre-processing\n" << std::endl;
 }
 
@@ -66,7 +68,7 @@ int main(int argc, char** argv)
 	treeTop.buildSequence();
 	treeTop.printSequence();
 	//if(argList.printToScreen)
-	//treeTop.printTrees();
+	//	treeTop.printTrees();
 
 	return 0;
 }
