@@ -81,7 +81,7 @@ private:
 	std::string occuPaths;
 
 	/* Creation/destruction */
-	void createNode(Node *node, short label, char qual);
+	void createNode(Node *node, short label, char qual, long rN, int offset);
 
 	/* Public->private overloads */
 	void printAllPaths(Node *node, int len, short label);
