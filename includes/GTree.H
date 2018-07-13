@@ -20,7 +20,7 @@
 
 #define NBASES 4
 #define RES 500
-#define NUM_THREADS 2
+#define NUM_THREADS 4
 
 #include <atomic>
 #include <mutex>
@@ -49,10 +49,11 @@ typedef struct Node {
 namespace GTH {
 	extern std::vector<SeqRead> seqReads;
 
+	float getNewWeight(float curWeight, long occs, char qual);
+	void updateWeight(Node* node, char qual);
 	char retLabel(int label);
 	short mostOccs(Node *node);
 	short countChildren(Node *node);
-	float updateWeight(Node *node, char qual);
 }
 
 // GTree class used in construction and destruction of tree
@@ -78,12 +79,12 @@ public:
 		basePaths = occuPaths = "";
 	}
 private:
-	std::atomic<Node*> root;
-	unsigned long head, nodesCnt;
+	Node* root;
+	std::atomic<unsigned long> head, nodesCnt;
 	std::vector< std::vector<Node> > nodes;
 	std::string basePaths;
 	std::string occuPaths;
-	std::mutex gtMut[2];
+	std::mutex gtMut;
 
 	/* Creation/destruction */
 	void createNode(Node *node, short label, char qual, long rN, int offset);

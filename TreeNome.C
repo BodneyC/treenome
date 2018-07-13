@@ -66,7 +66,7 @@ int main(int argc, char** argv)
 	if(argList.printToScreen)
 		treeTop.printTrees();
 	treeTop.buildSequence();
-	treeTop.printSequence();
+	//treeTop.printSequence();
 	//if(argList.printToScreen)
 	//	treeTop.printTrees();
 

@@ -28,7 +28,7 @@ TreeTop::TreeTop():
 /** --------------- Read Processing ---------------- **/
 void TreeTop::threadFunc(unsigned long i)
 {
-	for(short j = 0; j < 2; j++)//GTH::seqReads[i].size(); j++)
+	for(short j = 0; j < GTH::seqReads[i].size(); j++)
 		trees[GTH::seqReads[i].getBaseInd(j)].addReadOne(i, j);
 }
 
@@ -86,6 +86,7 @@ void TreeTop::buildSequence()
 	while(rootOccsExist()) {
 
 		// Possibly make is a tighter gap as its working from single letters
+		// (this would actually be the k-mer match)
 		if((unsigned) offset == sequence.length() - 1) {
 			sequence += 'N';
 			maxPath();
