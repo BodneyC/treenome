@@ -78,11 +78,14 @@ namespace GTH {
 
 /** ------------- GTree Cons and Dees -------------- **/
 GTree::GTree(): 
-	root(nullptr), head(0), nodesCnt(0), basePaths(""), occuPaths("")
+	root(nullptr), head(0), nodesCnt(0), basePaths(""), occuPaths(""), 
+	iHead(0), iNodesCnt(0), iSpare(nullptr)
 { 
 	// Because reallocation of std::vectors is assured if its class is a 
 	// std::vector, a vector of vectors has been used with a 1-by-1 
 	// .push_back()
+	infNodes.resize(1);
+	infNodes[iNodesCnt].resize(RES);
 	nodes.resize(1);
 	nodes[nodesCnt].resize(RES);
 }
@@ -143,6 +146,7 @@ void GTree::addToSeq(long offset, std::string &sequence)
 void GTree::createRoot(short ind)
 {
 	root = &(nodes[nodesCnt][head]);
+	root->addInf = &(infNodes[iNodesCnt][iHead]);
 	head++;
 
 	for(uint i = 0; i < GTH::seqReads.size(); i++) {
@@ -156,8 +160,8 @@ void GTree::createRoot(short ind)
 		}
 		if(offset != -1) {
 			char qual = GTH::seqReads[i].getQual(offset);
-			root->readNum = i;
-			root->offset = offset;
+			root->addInf->readNum = i;
+			root->addInf->offset = offset;
 			root->weight = qual;
 			// Doesn't set occs as addRead...() will do that
 			return;
@@ -167,6 +171,7 @@ void GTree::createRoot(short ind)
 
 void GTree::createNode(Node *node, short ind, char qual, long rN, int offset)
 {
+	// Create the child node
 	if(nodes[nodesCnt].size() == head) {
 		std::vector<Node> tmpVec(RES);
 		nodes.push_back(tmpVec);
@@ -176,12 +181,27 @@ void GTree::createNode(Node *node, short ind, char qual, long rN, int offset)
 	node->subnodes[ind] = &(nodes[nodesCnt][head]);
 	head++;
 
-	// Doesn't set occs as addRead...() will do that
 	Node *tmpNode = node->subnodes[ind];
-	tmpNode->readNum = rN;
-	tmpNode->offset = offset;
 	tmpNode->weight = qual;
 	tmpNode->occs = 1;
+
+	if(iSpare) {
+		tmpNode->addInf = iSpare;
+		iSpare = nullptr;
+	} else {
+		if(infNodes[iNodesCnt].size() == iHead) {
+			std::vector<NAddInf> tmpVec(RES);
+			infNodes.push_back(tmpVec);
+			iNodesCnt++;
+			iHead = 0;
+		}
+		tmpNode->addInf = &(infNodes[iNodesCnt][iHead]);
+	}
+	tmpNode->addInf->readNum = rN;
+	tmpNode->addInf->offset = offset;
+
+	iSpare = node->addInf;
+	node->addInf = nullptr;
 }
 
 /** --------------- Read Processing ---------------- **/
@@ -189,26 +209,33 @@ void GTree::addReadOne(long readNum, short offset)
 {
 	Node *node = root;
 	SeqRead *read = &GTH::seqReads[readNum];
+	bool balance = 0;
+	unsigned long tmpReadNum;
+	short tmpOffset;
 	
 	for(int i = offset + 1; i < GTH::seqReads[readNum].size(); i++) {
 		short ind = (*read).getBaseInd(i);
 		GTH::updateWeight(node, (*read).getQual(i - 1));
 		if(!(node->subnodes[ind])) {
+			if(!GTH::countChildren(node)) {
+				balance = 1;
+				tmpOffset = node->addInf->offset;
+				tmpReadNum = node->addInf->readNum;
+			}
 			createNode(node, ind, (*read).getQual(i), readNum, i);
-			if(GTH::countChildren(node) == 1)
-				balanceNode(node);
+			if(balance)
+				balanceNode(node, tmpReadNum, tmpOffset);
 			return;
 		}
 		node = node->subnodes[ind];
 	}
 }
 
-void GTree::balanceNode(Node *node)
+void GTree::balanceNode(Node *node, unsigned long lReadNum, short lOffset)
 {
 	// Get the offset and read before overiding/updating
-	long lReadNum = node->readNum;
 	SeqRead *lRead = &GTH::seqReads[lReadNum];
-	short lOffset = node->offset + 1;
+	lOffset++;
 	short lInd = (*lRead).getBaseInd(lOffset);
 	char lQual = (*lRead).getQual(lOffset);
 	
@@ -225,13 +252,13 @@ void GTree::balanceNode(Node *node)
 	node = node->subnodes[lInd];
 
 	// If the paths are literally the same:
-	if(lOffset == node->offset && lReadNum == node->readNum)
+	if(lOffset == node->addInf->offset && lReadNum == node->addInf->readNum)
 		return;
 
 	// If the paths follow the same route:
-	long rReadNum = node->readNum;
+	long rReadNum = node->addInf->readNum;
 	SeqRead *rRead = &GTH::seqReads[rReadNum];
-	short rOffset = node->offset + 1;
+	short rOffset = node->addInf->offset + 1;
 	short rInd = 0;
 	char rQual;
 	lOffset++;

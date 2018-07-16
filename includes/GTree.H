@@ -27,14 +27,18 @@
 #include "SeqRead.H"
 
 // The node type for the GTrees 
+typedef struct NAddInf {
+	short offset;
+	long readNum;
+} NaddInf;
+
 typedef struct Node {
 	long occs;
 	float weight;
-	short offset;
-	long readNum;
 	Node* subnodes[NBASES];
+	NAddInf* addInf;
 
-	Node(): occs(0), weight(0), offset(0), readNum(0)
+	Node(): occs(0), weight(0), addInf(nullptr)
 	{
 		for(int i = 0; i < NBASES; i++)
 			subnodes[i] = nullptr;
@@ -60,7 +64,7 @@ public:
 	/* Tree creation functions */
 	void createRoot(short ind);
 	void addReadOne(long readNum, short offset); 
-	void balanceNode(Node *node);
+	void balanceNode(Node *node, unsigned long lReadNum, short lOffset);
 
 	/* Sequence creation functions */
 	void addToSeq(long offset, std::string &sequence);
@@ -79,6 +83,9 @@ private:
 	std::vector< std::vector<Node> > nodes;
 	std::string basePaths;
 	std::string occuPaths;
+	unsigned long iHead, iNodesCnt;
+	NAddInf* iSpare;
+	std::vector< std::vector<NAddInf> > infNodes;
 
 	/* Creation/destruction */
 	void createNode(Node *node, short label, char qual, long rN, int offset);
