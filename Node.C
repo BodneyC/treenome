@@ -36,3 +36,28 @@ Node& Node::operator=(const Node& tmpNode)
 	return *this;
 }
 
+
+LeafNode::LeafNode(const LeafNode& tmpLeafNode) 
+{
+	float tmpWeight = tmpLeafNode.weight;
+	long tmpOccs = tmpLeafNode.occs;
+
+	weight = tmpWeight;
+	occs = tmpOccs;
+	offset = tmpLeafNode.offset;
+	readNum = tmpLeafNode.readNum;
+}
+
+LeafNode& LeafNode::operator=(const LeafNode& tmpLeafNode) 
+{
+	float tmpWeight = tmpLeafNode.weight;
+	long tmpOccs = tmpLeafNode.occs;
+
+	this->weight = tmpWeight;
+	this->occs = tmpOccs;
+	this->offset = tmpLeafNode.offset;
+	this->readNum = tmpLeafNode.readNum;
+
+	return *this;
+}
+

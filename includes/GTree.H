@@ -80,8 +80,8 @@ public:
 	}
 private:
 	Node* root;
-	std::atomic<unsigned long> head, nodesCnt;
-	std::vector< std::vector<Node> > nodes;
+	std::atomic< unsigned long > head, nodesCnt;
+	std::vector< std::vector< Node > > nodes;
 	std::string basePaths;
 	std::string occuPaths;
 	std::mutex gtMut;

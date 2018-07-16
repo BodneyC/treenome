@@ -185,7 +185,7 @@ void GTree::balanceNode(Node *node)
 
 	// If there is nothing to balance with:
 	// (will obviously cause imbalanced weights/occs)
-	if(lOffset >= (*lRead).size()) 
+	if(lOffset + 1 == (*lRead).size()) 
 		return;
 	
 	// If the paths are different:
@@ -220,7 +220,7 @@ void GTree::balanceNode(Node *node)
 		}
 
 		createNode(node, rInd, rQual, rReadNum, rOffset);
-		GTH::updateWeight(node, (*rRead).getQual(rOffset));
+		GTH::updateWeight(node, (*lRead).getQual(lOffset));
 
 		node = node->subnodes[lInd];
 
