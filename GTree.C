@@ -212,6 +212,11 @@ void GTree::balanceNode(Node *node)
 	short lInd = (*lRead).getBaseInd(lOffset);
 	char lQual = (*lRead).getQual(lOffset);
 	
+	// If there is nothing to balance with:
+	// (will cause imbalances)
+	if(lOffset + 1 == (*lRead).size())
+		return;
+	
 	// If the paths are different:
 	if(!node->subnodes[lInd]) {
 		createNode(node, lInd, lQual, lReadNum, lOffset);
@@ -220,8 +225,7 @@ void GTree::balanceNode(Node *node)
 	node = node->subnodes[lInd];
 
 	// If the paths are literally the same:
-	if(lOffset == node->offset &&
-			lReadNum == node->readNum)
+	if(lOffset == node->offset && lReadNum == node->readNum)
 		return;
 
 	// If the paths follow the same route:
@@ -245,26 +249,23 @@ void GTree::balanceNode(Node *node)
 		}
 
 		// If they are the same but the node doesn't exist
-		if(!(node->subnodes[lInd])) {
-			createNode(node, lInd, lQual, lReadNum, lOffset);
-			GTH::updateWeight(node->subnodes[lInd], rQual);
-		}
+		createNode(node, lInd, lQual, lReadNum, lOffset);
 		GTH::updateWeight(node, lQual);
+
 		node = node->subnodes[lInd];
-
-
 
 		lOffset++;
 		rOffset++;
 	} 
 
 	// There will be imbalances caused by running out of read length
-	lQual = (*lRead).getQual(lOffset);
-	rQual = (*rRead).getQual(rOffset);
-	if(lOffset < (*lRead).size())
+	if(lOffset < (*lRead).size()) {
+		lQual = (*lRead).getQual(lOffset);
 		createNode(node, lInd, lQual, lReadNum, lOffset);
-	else if(rOffset < (*rRead).size())
+	} else if(rOffset < (*rRead).size()) {
+		rQual = (*rRead).getQual(rOffset);
 		createNode(node, rInd, rQual, rReadNum, rOffset);
+	}
 }
 
 /** ---------------- Path Printing ----------------- **/
