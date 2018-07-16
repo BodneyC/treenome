@@ -1,5 +1,5 @@
 CC=clang++
-LIBS=-g -Wall -std=c++11 -fopenmp=libomp
+LIBS=-g -Wall -std=c++11 -pthreads
 PROG=TreeNome
 SRC=$(wildcard *.C)
 OBJ=$(patsubst %.C, obj/%.o, $(SRC))
