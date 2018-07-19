@@ -13,11 +13,6 @@
 #include "includes/GTree.H"
 #include "includes/InputFile.H"
 
-// TreeTop Helpers
-namespace TTH {
-	std::thread thrPool[NUM_THREADS];
-}
-
 TreeTop::TreeTop(): 
 	sequence(""), nReads(0), readLength(0)
 {
@@ -28,8 +23,9 @@ TreeTop::TreeTop():
 /** --------------- Read Processing ---------------- **/
 void TreeTop::threadFunc(unsigned long i)
 {
-	for(short j = 0; j < GTH::seqReads[i].size(); j++)
-		trees[GTH::seqReads[i].getBaseInd(j)].addReadOne(i, j);
+	for(short j = 70; j < 80;j++)//GTH::seqReads[i].size(); j++)
+		if(GTH::seqReads[i].getBaseInd(j) == 2)
+			trees[GTH::seqReads[i].getBaseInd(j)].addReadOne(i, j);
 }
 
 void TreeTop::processReadsOne()
@@ -39,11 +35,13 @@ void TreeTop::processReadsOne()
 		for(unsigned int i = 0; i < NUM_THREADS - (GTH::seqReads.size() % NUM_THREADS); i++)
 			GTH::seqReads.push_back(SeqRead());
 	}
-	for(unsigned long i = 0; i < GTH::seqReads.size(); i += NUM_THREADS) {
-		for(int j = 0; j < NUM_THREADS; j++)
-			TTH::thrPool[j] = std::thread(&TreeTop::threadFunc, this, i + j);
-		for(int j = 0; j < NUM_THREADS; j++)
-			TTH::thrPool[j].join();
+	for(unsigned long i = 10; i < 12/*GTH::seqReads.size()*/; i += NUM_THREADS) {
+{
+#pragma omp parallel for schedule(static, 1)
+		for(int j = 0; j < NUM_THREADS; j++) 
+			threadFunc(i + j);
+#pragma omp barrier
+}
 	}
 }
 

@@ -20,11 +20,11 @@
 
 #define NBASES 4
 #define RES 500
-#define NUM_THREADS 4
+#define NUM_THREADS 2
 
 #include <atomic>
 #include <mutex>
-#include <thread>
+#include <omp.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -32,12 +32,12 @@
 
 // The node type for the GTrees 
 typedef struct Node {
-	std::atomic<long> occs;
+	long occs;
 	std::atomic<float> weight;
 	short offset;
 	long readNum;
 	Node* subnodes[NBASES];
-	std::mutex nodeMut;
+	omp_lock_t lock;
 
 	Node();
 	//Copy and assignment functions needed for atomics

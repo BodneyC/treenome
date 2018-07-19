@@ -12,6 +12,10 @@
  *******************************************************************/
 #include "includes/GTree.H"
 
+
+//////TMP
+#include<stdio.h>
+
 #ifdef __MINGW64__
 #include <sstream>
 namespace mingw_fix {
@@ -81,7 +85,6 @@ namespace GTH {
 		float newWeight, curWeight = node->weight;
 		node->occs++;
 		do {
-			curWeight = node->weight;
 			newWeight = GTH::getNewWeight(curWeight, node->occs, qual);
 		} while(!(node->weight.compare_exchange_weak(curWeight, newWeight)));
 	}
@@ -101,11 +104,14 @@ GTree::GTree():
 /** ---------------- Tree Creation ----------------- **/
 void GTree::createRoot(short ind)
 {
+	int offset = -1;
+	uint i;
+	char qual;
 	root = &(nodes[nodesCnt][head]);
 	head++;
 
-	for(uint i = 0; i < GTH::seqReads.size(); i++) {
-		int offset = -1;
+	for(i = 0; i < GTH::seqReads.size(); i++) {
+		offset = -1;
 		// Find algorithm
 		for(int j = 0; j < GTH::seqReads[i].size(); j++) {
 			if(GTH::seqReads[i].getBaseInd(j) == ind) {
@@ -114,20 +120,27 @@ void GTree::createRoot(short ind)
 			}
 		}
 		if(offset != -1) {
-			char qual = GTH::seqReads[i].getQual(offset);
+			qual = GTH::seqReads[i].getQual(offset);
 			root->readNum = i;
 			root->offset = offset;
 			root->weight = qual;
-			root->occs = 0;
-			return;
+			root->occs = 1;
+			break;
 		}
+	}
+	// Create second for balancing purposes
+	offset++;
+	if(offset && offset != GTH::seqReads[i].size()) {
+		ind = GTH::seqReads[i].getBaseInd(offset);
+		qual = GTH::seqReads[i].getQual(offset);
+		createNode(root, ind, qual, i, offset);
 	}
 }
 
 void GTree::createNode(Node *node, short ind, char qual, long rN, int offset)
 {
 	{
-		std::lock_guard<std::mutex> cnLock(gtMut);
+		//std::lock_guard<std::mutex> cnLock(gtMut);
 		// node (LeafNode) becomes Node, 
 		// node->subnodes[ind]
 		if(nodes[nodesCnt].size() == head) {
@@ -146,32 +159,58 @@ void GTree::createNode(Node *node, short ind, char qual, long rN, int offset)
 	tmpNode->offset = offset;
 	tmpNode->weight = qual;
 	tmpNode->occs = 1;
+	for(int i = 0; i < NBASES; i++)
+		tmpNode->subnodes[i] = nullptr;
 }
 
 /** --------------- Read Processing ---------------- **/
 void GTree::addReadOne(long readNum, short offset) 
 {
-	//std::lock_guard<std::mutex> rpLock(gtMut);
+	std::lock_guard<std::mutex> rpLock(gtMut);
 	Node *node = root;
 	SeqRead *read = &GTH::seqReads[readNum];
 	bool retBool = 0;
+
+	Node **path = new Node*[GTH::seqReads[readNum].size() - offset]();
 	
-	for(int i = offset + 1; i < GTH::seqReads[readNum].size(); i++) {
+	for(int i = offset + 1, pt = 0; i < GTH::seqReads[readNum].size(); i++, pt++) {
 		short ind = (*read).getBaseInd(i);
-		{
-			std::lock_guard<std::mutex> rpLock(node->nodeMut);
-			GTH::updateWeight(node, (*read).getQual(i-1));
-			if(!(node->subnodes[ind])) {
+		std::cout << "\nROOTOCCS: " << (*read).getCharBase(i)<<", thr: "<< omp_get_thread_num()<<", "<<root<<","<<node <<",";
+		path[pt] = node;
+		//GTH::updateWeight(node, (*read).getQual(i-1));
+		//{
+			//omp_set_lock(&node->lock);
+			if(!node->subnodes[ind]) {
 				createNode(node, ind, (*read).getQual(i), readNum, i);
 				if(GTH::countChildren(node) == 1)
 					balanceNode(node);
 				retBool = 1;
 			}
+			//// ??????????????
+			//if(i + 1 == GTH::seqReads[readNum].size() &&
+			//		node->subnodes[ind] ) {
+			//	balanceNode(node->subnodes[ind]);
+			//	retBool = 1;
+			//}
+			//omp_unset_lock(&node->lock);
+		//}
+		if(retBool){
+			// If EOS is reached, occurrences should be increased
+
+			for(int j = 0, k = offset; j <GTH::seqReads[readNum].size() - offset; j++, k++)
+				if(path[j])
+					GTH::updateWeight(path[j], (*read).getQual(k));
+				else
+					break;
+			printf("\nTHR: %d, RN: %ld\n", omp_get_thread_num(), readNum);
+				printAllPaths(2);
+			break;
 		}
-		if(retBool)
-			return;
 		node = node->subnodes[ind];
 	}
+
+	std::cout << "Final occs: " << root->occs << std::endl;
+	delete[] path;
 }
 
 void GTree::balanceNode(Node *node)
@@ -180,13 +219,15 @@ void GTree::balanceNode(Node *node)
 	long lReadNum = node->readNum;
 	SeqRead *lRead = &GTH::seqReads[lReadNum];
 	short lOffset = node->offset + 1;
-	short lInd = (*lRead).getBaseInd(lOffset);
-	char lQual = (*lRead).getQual(lOffset);
 
 	// If there is nothing to balance with:
 	// (will obviously cause imbalanced weights/occs)
-	if(lOffset + 1 == (*lRead).size()) 
+	if(lOffset == (*lRead).size()) 
 		return;
+		std::cout << "\nRootOccs:"<<root->occs<<"\nlOffset "<<lOffset << "lRead size " << (*lRead).size() <<", lReadNum "<<lReadNum<<"\n";
+
+	short lInd = (*lRead).getBaseInd(lOffset);
+	char lQual = (*lRead).getQual(lOffset);
 	
 	// If the paths are different:
 	if(!node->subnodes[lInd]) {
@@ -212,15 +253,31 @@ void GTree::balanceNode(Node *node)
 		lQual = (*lRead).getQual(lOffset);
 		rQual = (*rRead).getQual(rOffset);
 
+		std::cout << "Node: Root: "<<node<<","<<root<<"lOffset "<<lOffset<<", lReadNum "<<lReadNum<<"\nrOffset "<<rOffset<<", rReadNum "<<rReadNum<<std::endl;
+
 		if((*rRead).getBaseInd(rOffset) != (*lRead).getBaseInd(lOffset)) {
-			node->occs++;
 			createNode(node, lInd, lQual, lReadNum, lOffset);
 			createNode(node, rInd, rQual, rReadNum, rOffset);
 			return;
 		}
 
-		createNode(node, rInd, rQual, rReadNum, rOffset);
-		GTH::updateWeight(node, (*lRead).getQual(lOffset));
+		// Because we need to save the balance info of the same node regardless
+		// of which read is being processed
+		if(rReadNum < lReadNum) {
+			createNode(node, rInd, rQual, rReadNum, rOffset);
+			GTH::updateWeight(node, (*lRead).getQual(lOffset));
+		} else if(lReadNum < rReadNum) {
+			createNode(node, lInd, lQual, lReadNum, lOffset);
+			GTH::updateWeight(node, (*rRead).getQual(rOffset));
+		} else { // Same read
+			if(rOffset < lOffset) {
+				createNode(node, rInd, rQual, rReadNum, rOffset);
+				GTH::updateWeight(node, (*lRead).getQual(lOffset));
+			} else {
+				createNode(node, lInd, lQual, lReadNum, lOffset);
+				GTH::updateWeight(node, (*rRead).getQual(rOffset));
+			}
+		}
 
 		node = node->subnodes[lInd];
 

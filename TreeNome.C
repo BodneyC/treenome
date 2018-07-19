@@ -37,6 +37,7 @@ void argHelp()
 
 int main(int argc, char** argv)
 {
+	omp_set_num_threads(NUM_THREADS);
 	ArgParser argParser(argc, argv);
 	struct CMDArgs argList;
 	int argSucc = argParser.fillArgs(argList);
@@ -66,7 +67,7 @@ int main(int argc, char** argv)
 	if(argList.printToScreen)
 		treeTop.printTrees();
 	treeTop.buildSequence();
-	//treeTop.printSequence();
+	treeTop.printSequence();
 	//if(argList.printToScreen)
 	//	treeTop.printTrees();
 

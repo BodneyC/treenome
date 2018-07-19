@@ -1,8 +1,8 @@
 #include "includes/GTree.H"
 
-Node::Node(): weight(0), offset(0), readNum(0) 
+Node::Node(): occs(0), weight(0), offset(0), readNum(0)
 {
-	occs = 0;
+	omp_init_lock(&lock);
 	for(int i = 0; i < NBASES; i++)
 		subnodes[i] = nullptr;
 }
@@ -12,6 +12,7 @@ Node::Node(const Node& tmpNode)
 	float tmpWeight = tmpNode.weight;
 	long tmpOccs = tmpNode.occs;
 
+	omp_init_lock(&lock);
 	weight = tmpWeight;
 	occs = tmpOccs;
 	offset = tmpNode.offset;
@@ -25,6 +26,7 @@ Node& Node::operator=(const Node& tmpNode)
 	float tmpWeight = tmpNode.weight;
 	long tmpOccs = tmpNode.occs;
 
+	omp_init_lock(&lock);
 	this->weight = tmpWeight;
 	this->occs = tmpOccs;
 	this->offset = tmpNode.offset;
@@ -32,31 +34,6 @@ Node& Node::operator=(const Node& tmpNode)
 
 	for(int i = 0; i < NBASES; i++)
 		this->subnodes[i] = tmpNode.subnodes[i];
-
-	return *this;
-}
-
-
-LeafNode::LeafNode(const LeafNode& tmpLeafNode) 
-{
-	float tmpWeight = tmpLeafNode.weight;
-	long tmpOccs = tmpLeafNode.occs;
-
-	weight = tmpWeight;
-	occs = tmpOccs;
-	offset = tmpLeafNode.offset;
-	readNum = tmpLeafNode.readNum;
-}
-
-LeafNode& LeafNode::operator=(const LeafNode& tmpLeafNode) 
-{
-	float tmpWeight = tmpLeafNode.weight;
-	long tmpOccs = tmpLeafNode.occs;
-
-	this->weight = tmpWeight;
-	this->occs = tmpOccs;
-	this->offset = tmpLeafNode.offset;
-	this->readNum = tmpLeafNode.readNum;
 
 	return *this;
 }
