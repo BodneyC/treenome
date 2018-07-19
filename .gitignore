@@ -3,3 +3,5 @@
 *.exe
 TreeNome
 OUTFILES/*
+
+scripts/*

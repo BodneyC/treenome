@@ -20,7 +20,7 @@
 
 #define NBASES 4
 #define RES 500
-#define NUM_THREADS 2
+#define NUM_THREADS 4
 
 #include <atomic>
 #include <mutex>
@@ -65,7 +65,7 @@ public:
 	/* Tree creation functions */
 	void createRoot(short ind);
 	void addReadOne(long readNum, short offset); 
-	void balanceNode(Node *node);
+	bool balanceNode(Node *node);
 
 	/* Sequence creation functions */
 	void addToSeq(long offset, std::string &sequence);

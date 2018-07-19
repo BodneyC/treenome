@@ -83,6 +83,7 @@ namespace GTH {
 	void updateWeight(Node* node, char qual)
 	{
 		float newWeight, curWeight = node->weight;
+#pragma omp atomic
 		node->occs++;
 		do {
 			newWeight = GTH::getNewWeight(curWeight, node->occs, qual);
@@ -166,25 +167,27 @@ void GTree::createNode(Node *node, short ind, char qual, long rN, int offset)
 /** --------------- Read Processing ---------------- **/
 void GTree::addReadOne(long readNum, short offset) 
 {
+	std::vector<Node*> paths;
+
 	std::lock_guard<std::mutex> rpLock(gtMut);
 	Node *node = root;
 	SeqRead *read = &GTH::seqReads[readNum];
-	bool retBool = 0;
+	bool retBool = 0, clearBool = 0;
 
-	Node **path = new Node*[GTH::seqReads[readNum].size() - offset]();
-	
-	for(int i = offset + 1, pt = 0; i < GTH::seqReads[readNum].size(); i++, pt++) {
+	for(int i = offset + 1; i < GTH::seqReads[readNum].size(); i++) {
 		short ind = (*read).getBaseInd(i);
 		std::cout << "\nROOTOCCS: " << (*read).getCharBase(i)<<", thr: "<< omp_get_thread_num()<<", "<<root<<","<<node <<",";
-		path[pt] = node;
+		paths.push_back(node);
 		//GTH::updateWeight(node, (*read).getQual(i-1));
 		//{
 			//omp_set_lock(&node->lock);
 			if(!node->subnodes[ind]) {
 				createNode(node, ind, (*read).getQual(i), readNum, i);
-				if(GTH::countChildren(node) == 1)
-					balanceNode(node);
-				retBool = 1;
+				retBool = clearBool = 1;
+				if(GTH::countChildren(node) == 1) {
+					//std::cout << "NEGROS" << std::endl;
+					clearBool = balanceNode(node);
+				}
 			}
 			//// ??????????????
 			//if(i + 1 == GTH::seqReads[readNum].size() &&
@@ -194,14 +197,14 @@ void GTree::addReadOne(long readNum, short offset)
 			//}
 			//omp_unset_lock(&node->lock);
 		//}
+		if(clearBool) {
+			for(int j = 0, k = offset; j < paths.size(); j++, k++)
+				GTH::updateWeight(paths[j], (*read).getQual(k));
+			paths.clear();
+		}
 		if(retBool){
 			// If EOS is reached, occurrences should be increased
 
-			for(int j = 0, k = offset; j <GTH::seqReads[readNum].size() - offset; j++, k++)
-				if(path[j])
-					GTH::updateWeight(path[j], (*read).getQual(k));
-				else
-					break;
 			printf("\nTHR: %d, RN: %ld\n", omp_get_thread_num(), readNum);
 				printAllPaths(2);
 			break;
@@ -209,22 +212,23 @@ void GTree::addReadOne(long readNum, short offset)
 		node = node->subnodes[ind];
 	}
 
-	std::cout << "Final occs: " << root->occs << std::endl;
-	delete[] path;
+	//std::cout << "Final occs: " << root->occs << std::endl;
 }
 
-void GTree::balanceNode(Node *node)
+bool GTree::balanceNode(Node *node)
 {
+	std::vector<Node*> paths;
 	// Get the offset and read before overiding/updating
 	long lReadNum = node->readNum;
 	SeqRead *lRead = &GTH::seqReads[lReadNum];
 	short lOffset = node->offset + 1;
+	short tmpOff = lOffset;
 
 	// If there is nothing to balance with:
 	// (will obviously cause imbalanced weights/occs)
 	if(lOffset == (*lRead).size()) 
-		return;
-		std::cout << "\nRootOccs:"<<root->occs<<"\nlOffset "<<lOffset << "lRead size " << (*lRead).size() <<", lReadNum "<<lReadNum<<"\n";
+		return 0;
+		//std::cout << "\nRootOccs:"<<root->occs<<"\nlOffset "<<lOffset << "lRead size " << (*lRead).size() <<", lReadNum "<<lReadNum<<"\n";
 
 	short lInd = (*lRead).getBaseInd(lOffset);
 	char lQual = (*lRead).getQual(lOffset);
@@ -232,13 +236,13 @@ void GTree::balanceNode(Node *node)
 	// If the paths are different:
 	if(!node->subnodes[lInd]) {
 		createNode(node, lInd, lQual, lReadNum, lOffset);
-		return;
+		return 1;
 	}
 	node = node->subnodes[lInd];
 
 	// If the paths are literally the same:
 	if(lOffset == node->offset && lReadNum == node->readNum)
-		return;
+		return 0;
 
 	// If the paths follow the same route:
 	long rReadNum = node->readNum;
@@ -253,31 +257,24 @@ void GTree::balanceNode(Node *node)
 		lQual = (*lRead).getQual(lOffset);
 		rQual = (*rRead).getQual(rOffset);
 
-		std::cout << "Node: Root: "<<node<<","<<root<<"lOffset "<<lOffset<<", lReadNum "<<lReadNum<<"\nrOffset "<<rOffset<<", rReadNum "<<rReadNum<<std::endl;
+		//std::cout << "Node: Root: "<<node<<","<<root<<"lOffset "<<lOffset<<", lReadNum "<<lReadNum<<"\nrOffset "<<rOffset<<", rReadNum "<<rReadNum<<std::endl;
+
+		paths.push_back(node);
 
 		if((*rRead).getBaseInd(rOffset) != (*lRead).getBaseInd(lOffset)) {
 			createNode(node, lInd, lQual, lReadNum, lOffset);
 			createNode(node, rInd, rQual, rReadNum, rOffset);
-			return;
+
+			for(unsigned short j = 0, k = tmpOff; j < paths.size(); j++, k++)
+				GTH::updateWeight(paths[j], (*lRead).getQual(k));
+
+			return 1;
 		}
 
 		// Because we need to save the balance info of the same node regardless
 		// of which read is being processed
-		if(rReadNum < lReadNum) {
 			createNode(node, rInd, rQual, rReadNum, rOffset);
-			GTH::updateWeight(node, (*lRead).getQual(lOffset));
-		} else if(lReadNum < rReadNum) {
-			createNode(node, lInd, lQual, lReadNum, lOffset);
-			GTH::updateWeight(node, (*rRead).getQual(rOffset));
-		} else { // Same read
-			if(rOffset < lOffset) {
-				createNode(node, rInd, rQual, rReadNum, rOffset);
-				GTH::updateWeight(node, (*lRead).getQual(lOffset));
-			} else {
-				createNode(node, lInd, lQual, lReadNum, lOffset);
-				GTH::updateWeight(node, (*rRead).getQual(rOffset));
-			}
-		}
+			//GTH::updateWeight(node, (*lRead).getQual(lOffset));
 
 		node = node->subnodes[lInd];
 
@@ -287,13 +284,15 @@ void GTree::balanceNode(Node *node)
 
 	// There will be imbalances caused by running out of read length
 	if(lOffset < (*lRead).size()) {
-		GTH::updateWeight(node, (*lRead).getQual(rOffset));
+		//GTH::updateWeight(node, (*lRead).getQual(rOffset));
 		createNode(node, lInd, lQual, lReadNum, lOffset);
 	} 
 	if(rOffset < (*rRead).size()) {
-		GTH::updateWeight(node, (*rRead).getQual(rOffset));
+		//GTH::updateWeight(node, (*rRead).getQual(rOffset));
 		createNode(node, rInd, rQual, rReadNum, rOffset);
 	}
+
+	return 0;
 }
 
 /** --------------- Genome Creation ---------------- **/
