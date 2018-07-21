@@ -64,6 +64,7 @@ int main(int argc, char** argv)
 	//if(argList.preProcess)
 	//	treeTop.preProcess();
 	treeTop.processReadsOne();
+	std::cout << "\n----------" << std::endl;
 	if(argList.printToScreen)
 		treeTop.printTrees();
 	treeTop.buildSequence();

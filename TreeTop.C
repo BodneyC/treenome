@@ -23,8 +23,8 @@ TreeTop::TreeTop():
 /** --------------- Read Processing ---------------- **/
 void TreeTop::threadFunc(unsigned long i)
 {
-	for(short j = 70; j < GTH::seqReads[i].size(); j++)
-		if(GTH::seqReads[i].getBaseInd(j) == 2)
+	for(short j = 0; j < GTH::seqReads[i].size(); j++)
+		//if(GTH::seqReads[i].getBaseInd(j) == 0)
 			trees[GTH::seqReads[i].getBaseInd(j)].addReadOne(i, j);
 }
 
@@ -35,12 +35,14 @@ void TreeTop::processReadsOne()
 		for(unsigned int i = 0; i < NUM_THREADS - (GTH::seqReads.size() % NUM_THREADS); i++)
 			GTH::seqReads.push_back(SeqRead());
 	}
-	for(unsigned long i = 7; i < 12/*GTH::seqReads.size()*/; i += NUM_THREADS) {
+	for(unsigned long i = 0; i < GTH::seqReads.size();) {
 {
+	//std::cout << i << std::endl;
 #pragma omp parallel for schedule(static, 1)
-		for(int j = 0; j < NUM_THREADS; j++) 
+	for(int j = 0; j < NUM_THREADS; j++) 
 			threadFunc(i + j);
 #pragma omp barrier
+		i += 10;
 }
 	}
 }

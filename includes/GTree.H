@@ -65,7 +65,7 @@ public:
 	/* Tree creation functions */
 	void createRoot(short ind);
 	void addReadOne(long readNum, short offset); 
-	bool balanceNode(Node *node);
+	bool balanceNode(Node *node, bool mode);
 
 	/* Sequence creation functions */
 	void addToSeq(long offset, std::string &sequence);
