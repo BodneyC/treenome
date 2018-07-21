@@ -38,6 +38,7 @@ typedef struct Node {
 	long readNum;
 	Node* subnodes[NBASES];
 	omp_lock_t lock;
+	std::mutex gtMut;
 
 	Node();
 	//Copy and assignment functions needed for atomics

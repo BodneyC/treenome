@@ -141,9 +141,7 @@ void GTree::createRoot(short ind)
 void GTree::createNode(Node *node, short ind, char qual, long rN, int offset)
 {
 	{
-		//std::lock_guard<std::mutex> cnLock(gtMut);
-		// node (LeafNode) becomes Node, 
-		// node->subnodes[ind]
+		std::lock_guard<std::mutex> cnLock(gtMut);
 		if(nodes[nodesCnt].size() == head) {
 			std::vector<Node> tmpVec(RES);
 			nodes.push_back(tmpVec);
@@ -169,49 +167,49 @@ void GTree::addReadOne(long readNum, short offset)
 {
 	std::vector<Node*> paths;
 
-	std::lock_guard<std::mutex> rpLock(gtMut);
+	//std::lock_guard<std::mutex> rpLock(gtMut);
 	Node *node = root;
 	SeqRead *read = &GTH::seqReads[readNum];
 	bool retBool = 0, clearBool = 0;
 
+	if(root->offset == offset && root->readNum == readNum)
+		return;
+
 	for(int i = offset + 1; i < GTH::seqReads[readNum].size(); i++) {
 		short ind = (*read).getBaseInd(i);
-		//std::cout << "\nROOTOCCS: " << (*read).getCharBase(i)<<", thr: "<< omp_get_thread_num()<<", "<<root<<","<<node <<",";
+		std::cout << "\nBase: " << (*read).getCharBase(i)<<", thr: "<< omp_get_thread_num()<<", "<<root<<","<<node <<",";
 		paths.push_back(node);
+
+		omp_set_lock(&node->lock);
 		//{
-			//omp_set_lock(&node->lock);
-			if(!node->subnodes[ind]) {
-				createNode(node, ind, (*read).getQual(i), readNum, i);
-				retBool = clearBool = 1;
-				if(GTH::countChildren(node) == 1) {
-					//std::cout << "NEGROS" << std::endl;
-					clearBool = balanceNode(node, 1);
-				}
+		//std::lock_guard<std::mutex> rpLock(node->gtMut);
+		if(!node->subnodes[ind]) {
+			createNode(node, ind, (*read).getQual(i), readNum, i);
+			retBool = clearBool = 1;
+			if(GTH::countChildren(node) == 1) {
+				clearBool = balanceNode(node, 1);
 			}
-			if(i + 1 == GTH::seqReads[readNum].size() &&
-					node->subnodes[ind] &&
-					!GTH::countChildren(node->subnodes[ind])) {
-				balanceNode(node->subnodes[ind], 0);
-				//std::cout << "THIS: " << clearBool << std::endl;
-			}
-			//omp_unset_lock(&node->lock);
+		}
+		if(i + 1 == GTH::seqReads[readNum].size() &&
+				node->subnodes[ind] &&
+				!GTH::countChildren(node->subnodes[ind])) {
+			balanceNode(node->subnodes[ind], 0);
+			std::cout << "THIS: " << clearBool << std::endl;
+		}
+		omp_unset_lock(&node->lock);
 		//}
+
 		if(clearBool) {
 			for(int j = 0, k = offset; j < paths.size(); j++, k++)
 				GTH::updateWeight(paths[j], (*read).getQual(k));
 		}
+		node = node->subnodes[ind];
 		if(retBool){
 			paths.clear();
 			// If EOS is reached, occurrences should be increased
-
-			//printf("\nTHR: %d, RN: %ld\n", omp_get_thread_num(), readNum);
-			//	printAllPaths(0);
 			break;
 		}
-		node = node->subnodes[ind];
 	}
-
-	//std::cout << "Final occs: " << root->occs << std::endl;
 }
 
 bool GTree::balanceNode(Node *node, bool mode)
@@ -231,16 +229,17 @@ bool GTree::balanceNode(Node *node, bool mode)
 	short lInd = (*lRead).getBaseInd(lOffset);
 	char lQual = (*lRead).getQual(lOffset);
 	
+	if(node->subnodes[lInd] && 
+			lOffset == node->subnodes[lInd]->offset && 
+			lReadNum == node->subnodes[lInd]->readNum)
+		return 0;
+
 	// If the paths are different:
 	if(!node->subnodes[lInd]) {
 		createNode(node, lInd, lQual, lReadNum, lOffset);
 		return mode;
 	}
 	node = node->subnodes[lInd];
-
-	// If the paths are literally the same:
-	if(lOffset == node->offset && lReadNum == node->readNum)
-		return 0;
 
 	// If the paths follow the same route:
 	long rReadNum = node->readNum;
@@ -254,8 +253,6 @@ bool GTree::balanceNode(Node *node, bool mode)
 		rInd = (*rRead).getBaseInd(rOffset);
 		lQual = (*lRead).getQual(lOffset);
 		rQual = (*rRead).getQual(rOffset);
-
-		//std::cout << "Node: Root: "<<node<<","<<root<<"lOffset "<<lOffset<<", lReadNum "<<lReadNum<<"\nrOffset "<<rOffset<<", rReadNum "<<rReadNum<<std::endl;
 
 		paths.push_back(node);
 
@@ -271,16 +268,13 @@ bool GTree::balanceNode(Node *node, bool mode)
 
 		// Because we need to save the balance info of the same node regardless
 		// of which read is being processed
-			createNode(node, rInd, rQual, rReadNum, rOffset);
-			//GTH::updateWeight(node, (*lRead).getQual(lOffset));
+		createNode(node, rInd, rQual, rReadNum, rOffset);
 
 		node = node->subnodes[lInd];
 
 		lOffset++;
 		rOffset++;
 	} 
-		//std::cout << "\nlOffset "<<lOffset << ", lReadNum "<<lReadNum<< ", size: "<< (*lRead).size()<<"\n";
-		//std::cout << "\nrOffset "<<rOffset << ", rReadNum "<<rReadNum<<"\n";
 
 	// There will be imbalances caused by running out of read length
 	if(lOffset < (*lRead).size()) {
