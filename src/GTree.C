@@ -12,10 +12,6 @@
  *******************************************************************/
 #include "includes/GTree.H"
 
-
-//////TMP
-#include<stdio.h>
-
 #ifdef __MINGW64__
 #include <sstream>
 namespace mingw_fix {
@@ -73,33 +69,40 @@ namespace GTH {
 		return children;
 	}
 
-	float getNewWeight(float curWeight, long occs, char qual)
+	float getNewWeight(double curWeight, long occs, char qual)
 	{
 		// Cumulative average: A_{n+1} = ((A_n + x_{n+1}) - A_n) / n + 1
-		return curWeight += ((static_cast<float>(qual) - curWeight) /
+		return curWeight += ((static_cast<double>(qual) - curWeight) /
 				static_cast<double>(occs));
 	}
 
 	void updateWeight(Node* node, char qual)
 	{
-		float newWeight, curWeight = node->weight;
+		double newWeight, curWeight = node->weight;
 #pragma omp atomic
 		node->occs++;
 		do {
 			newWeight = GTH::getNewWeight(curWeight, node->occs, qual);
 		} while(!(node->weight.compare_exchange_weak(curWeight, newWeight)));
 	}
+
+	void removeDoubleEnding(std::string& doubleString)
+	{
+		doubleString.erase(doubleString.find_last_not_of('0') + 1, std::string::npos);
+		doubleString.erase(doubleString.find_last_not_of('.') + 1, std::string::npos);
+	}
 }
 
 /** ------------- GTree Cons and Dees -------------- **/
 GTree::GTree(): 
-	root(nullptr), head(0), nodesCnt(0), basePaths(""), occuPaths("")
+	root(nullptr), head(0), nodesCnt(0), basePaths(""), occuPaths(""), treeString("")
 { 
 	// Because reallocation of std::vectors is assured if its class is a 
 	// std::vector, a vector of vectors has been used with a 1-by-1 
 	// .push_back()
 	nodes.resize(1);
 	nodes[nodesCnt].resize(RES);
+	omp_init_lock(&lock);
 }
 
 /** ---------------- Tree Creation ----------------- **/
@@ -109,7 +112,6 @@ void GTree::createRoot(short ind)
 	uint i;
 	char qual;
 	root = &(nodes[nodesCnt][head]);
-	head++;
 
 	for(i = 0; i < GTH::seqReads.size(); i++) {
 		offset = -1;
@@ -140,17 +142,16 @@ void GTree::createRoot(short ind)
 
 void GTree::createNode(Node *node, short ind, char qual, long rN, int offset)
 {
-	{
-		std::lock_guard<std::mutex> cnLock(gtMut);
-		if(nodes[nodesCnt].size() == head) {
-			std::vector<Node> tmpVec(RES);
-			nodes.push_back(tmpVec);
-			nodesCnt++;
-			head = 0;
-		}
-		node->subnodes[ind] = &(nodes[nodesCnt][head]);
-		head++;
+	omp_set_lock(&lock);
+	head++;
+	if(head == RES) {
+		std::vector<Node> tmpVec(RES);
+		nodes.push_back(tmpVec);
+		nodesCnt++;
+		head = 0;
 	}
+	node->subnodes[ind] = &(nodes[nodesCnt][head]);
+	omp_unset_lock(&lock);
 
 	// Doesn't set occs as addRead...() will do that
 	Node *tmpNode = node->subnodes[ind];
@@ -167,7 +168,6 @@ void GTree::addReadOne(long readNum, short offset)
 {
 	std::vector<Node*> paths;
 
-	//std::lock_guard<std::mutex> rpLock(gtMut);
 	Node *node = root;
 	SeqRead *read = &GTH::seqReads[readNum];
 	bool retBool = 0, clearBool = 0;
@@ -177,12 +177,9 @@ void GTree::addReadOne(long readNum, short offset)
 
 	for(int i = offset + 1; i < GTH::seqReads[readNum].size(); i++) {
 		short ind = (*read).getBaseInd(i);
-		std::cout << "\nBase: " << (*read).getCharBase(i)<<", thr: "<< omp_get_thread_num()<<", "<<root<<","<<node <<",";
 		paths.push_back(node);
 
 		omp_set_lock(&node->lock);
-		//{
-		//std::lock_guard<std::mutex> rpLock(node->gtMut);
 		if(!node->subnodes[ind]) {
 			createNode(node, ind, (*read).getQual(i), readNum, i);
 			retBool = clearBool = 1;
@@ -194,10 +191,8 @@ void GTree::addReadOne(long readNum, short offset)
 				node->subnodes[ind] &&
 				!GTH::countChildren(node->subnodes[ind])) {
 			balanceNode(node->subnodes[ind], 0);
-			std::cout << "THIS: " << clearBool << std::endl;
 		}
 		omp_unset_lock(&node->lock);
-		//}
 
 		if(clearBool) {
 			for(int j = 0, k = offset; j < paths.size(); j++, k++)
@@ -342,8 +337,52 @@ void GTree::addToSeq(long offset, std::string &sequence)
 	delete[] path;
 }
 
+/** ---------------- Tree Storage ------------------ **/
+std::string GTree::storeTree(short label) {
+	treeString += GTH::retLabel(label);
+#ifdef __MINGW64__
+	std::string val[2] = {
+		mingw_fix::to_string(root->occs),
+		mingw_fix::to_string(root->weight)
+	};
+#else
+	std::string val[2] = {
+		std::to_string(root->occs),
+		std::to_string(root->weight)
+	};
+#endif /*__MINGW32__*/
+	GTH::removeDoubleEnding(val[1]);
+	treeString += ':' + val[0] + ':' + val[1] + ';';
+	storeTree(root);
+	return treeString;
+}
+
+void GTree::storeTree(Node* node)
+{
+	for(int i = 0; i < NBASES; i++) {
+		if(node->subnodes[i]) {
+			treeString += GTH::retLabel(i);
+#ifdef __MINGW64__
+			std::string val[2] = {
+				mingw_fix::to_string(node->subnodes[i]->occs),
+				mingw_fix::to_string(node->subnodes[i]->weight)
+			};
+#else
+			std::string val[2] = {
+				std::to_string(node->subnodes[i]->occs),
+				std::to_string(node->subnodes[i]->weight)
+			};
+#endif /*__MINGW32__*/
+			GTH::removeDoubleEnding(val[1]);
+			treeString += ':' + val[0] + ':' + val[1] + ';';
+			storeTree(node->subnodes[i]);
+		}
+	}
+	treeString += ',';
+}
+
 /** ---------------- Path Printing ----------------- **/
-void GTree::printAllPaths(Node *node, int len, short label)
+void GTree::printAllPaths(Node* node, int len, short label)
 {
     if(!node)
         return;

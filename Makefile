@@ -1,15 +1,16 @@
 CC=clang++
 CFLAGS=-g -Wall -std=c++11 -O0
 LIBS=-fopenmp
+INC=-I.
 PROG=TreeNome
-SRC=$(wildcard *.C)
-OBJ=$(patsubst %.C, obj/%.o, $(SRC))
+SRC=$(wildcard src/*.C)
+OBJ=$(patsubst src/%.C, obj/%.o, $(SRC))
 
 $(PROG): $(OBJ)
-	$(CC) $(CFLAGS) $(LIBS) -o $@ $^
+	$(CC) $(INC) $(CFLAGS) $(LIBS) -o $@ $^
 
-obj/%.o: %.C
-	$(CC) $(CFLAGS) $(LIBS) -o $@ -c $<
+obj/%.o: src/%.C
+	$(CC) $(INC) $(CFLAGS) $(LIBS) -o $@ -c $<
 
 .PHONY: run clean
 

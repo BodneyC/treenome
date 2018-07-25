@@ -30,21 +30,16 @@ void TreeTop::threadFunc(unsigned long i)
 
 void TreeTop::processReadsOne()
 {
-	// Extra seqReads' to match NUM_THREADS
-	//if(GTH::seqReads.size() % NUM_THREADS) {
-	//	for(unsigned int i = 0; i < NUM_THREADS - (GTH::seqReads.size() % NUM_THREADS); i++)
-	//		GTH::seqReads.push_back(SeqRead());
-	//}
-	for(unsigned long i = 0; i < GTH::seqReads.size(); i += NUM_THREADS) {
+#pragma omp parallel num_threads(NUM_THREADS)
 {
+	for(unsigned long i = 0; i < GTH::seqReads.size(); i += NUM_THREADS) {
 	//std::cout << i << std::endl;
-#pragma omp parallel for schedule(static, 1)
+#pragma omp for schedule(static, 1)
 	for(int j = 0; j < NUM_THREADS; j++) 
 		if(i + j < GTH::seqReads.size())
 			threadFunc(i + j);
-#pragma omp barrier
-}
 	}
+}
 }
 
 /** ------------- Sequence Generation -------------- **/
@@ -100,6 +95,12 @@ void TreeTop::buildSequence()
 }
 
 /** --------------- Misc Functions ----------------- **/
+void TreeTop::storeTrees()
+{
+	for(int i = 0; i < NBASES; i++)
+		treeStrings[i] = trees[i].storeTree(i);
+}
+
 void TreeTop::printTrees()
 {
 	for(int i = 0; i < NBASES; i++)

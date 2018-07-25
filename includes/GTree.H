@@ -19,7 +19,7 @@
 #endif /*c++11 check*/
 
 #define NBASES 4
-#define RES 500
+#define RES 50
 #define NUM_THREADS 4
 
 #include <atomic>
@@ -33,12 +33,14 @@
 // The node type for the GTrees 
 typedef struct Node {
 	long occs;
-	std::atomic<float> weight;
+	std::atomic<double> weight;
 	short offset;
 	long readNum;
 	Node* subnodes[NBASES];
 	omp_lock_t lock;
-	std::mutex gtMut;
+#ifdef PARENT
+	Node* parent;
+#endif
 
 	Node();
 	//Copy and assignment functions needed for atomics
@@ -73,30 +75,35 @@ public:
 	void followPath(Node *node, short ind, std::string &sequence);
 
 	/* Usefull non-essential */
-	Node *getRoot() { if(root) return root; 
-		else return nullptr; }
+	Node* getRoot() { 
+		if(root) 
+			return root; 
+		else 
+			return nullptr; 
+	}
 	void printAllPaths(short label) { 
 		printAllPaths(root, 0, label);
 		basePaths = occuPaths = "";
 	}
+	std::string storeTree(short label);
 private:
 	Node* root;
 	std::atomic< unsigned long > head, nodesCnt;
 	std::vector< std::vector< Node > > nodes;
-	std::string basePaths;
-	std::string occuPaths;
-	std::mutex gtMut;
+	std::string basePaths, occuPaths, treeString;
+	omp_lock_t lock;
 
 	/* Creation/destruction */
 	void createNode(Node *node, short label, char qual, long rN, int offset);
 
 	/* Public->private overloads */
 	void printAllPaths(Node *node, int len, short label);
+	void storeTree(Node* node);
 };
 
 // Structure which holds read data and the four GTrees
 typedef struct TreeTop {
-	std::string sequence;
+	std::string sequence, treeStrings[NBASES];
 	long nReads;
 	int readLength;
 	GTree trees[NBASES];
@@ -111,6 +118,7 @@ typedef struct TreeTop {
 	bool rootOccsExist();
 	void printSequence();
 	void printTrees();
+	void storeTrees();
 } TreeTop;
 
 #endif /*_GTREE_*/

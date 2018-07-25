@@ -25,14 +25,21 @@
 void argHelp()
 {
 	std::cout << "\nCommand usage: \n\n"
-		"\t  ./TreeNome [-f ./path/to/file] [-o] [-p]"
+		"\t  ./TreeNome [-f ./path/to/inFile] [-o] [-s ./path/to/outFile]"
 		"\nWhere:\n\n"
 		"\t  -f <string>\n"
 		"\t   Path to input file (fastq format)\n\n"
 		"\t  -o\n"
 		"\t   Output to screen\n\n"
-		"\t  -p\n"
-		"\t   Perform pre-processing\n" << std::endl;
+		"\t  -s <string>\n"
+		"\t   Store tree to file\n" << std::endl;
+}
+
+void writeTreesToDisk(std::string oFilename, TreeTop& treeTop)
+{
+	std::ofstream outFile(oFilename);
+	for(int i = 0; i < NBASES; i++)
+		outFile << treeTop.treeStrings[i].c_str() << std::endl;
 }
 
 int main(int argc, char** argv)
@@ -61,16 +68,17 @@ int main(int argc, char** argv)
 	}
 
 	TreeTop treeTop;
-	//if(argList.preProcess)
-	//	treeTop.preProcess();
 	treeTop.processReadsOne();
 	std::cout << "\n----------" << std::endl;
 	if(argList.printToScreen)
 		treeTop.printTrees();
+	if(argList.storeToFile) {
+		treeTop.storeTrees();
+		writeTreesToDisk(argList.oFilename, treeTop);
+	}
 	treeTop.buildSequence();
 	treeTop.printSequence();
-	//if(argList.printToScreen)
-	//	treeTop.printTrees();
+
 
 	return 0;
 }

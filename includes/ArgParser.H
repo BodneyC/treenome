@@ -18,14 +18,15 @@
 #include <fstream>
 
 #define USAGE_ERROR -1
-#define FILE_ERROR -2
+#define IN_FILE_ERROR -2
+#define OUT_FILE_ERROR -3
 
 struct CMDArgs {
-	std::string iFilename;
-	bool printToScreen;
-	bool preProcess;
+	std::string iFilename, oFilename;
+	bool printToScreen, storeToFile;
 
-	CMDArgs(): iFilename(""), printToScreen(0), preProcess(0) {  }
+	CMDArgs(): 
+		iFilename(""), oFilename(""), printToScreen(0), storeToFile(0) {  }
 };
 
 class ArgParser {
@@ -42,15 +43,17 @@ public:
 		for(int i = 0; i < argc; i++) {
 			if(args[i] == "-f") {
 				i++;
-				std::ifstream testFile(args[i]);
-				if(testFile.good())
-					argList.iFilename = args[i];
-				else 
-					return FILE_ERROR;
+				if(inFileCheck(args[i]))
+					return IN_FILE_ERROR;
+				argList.iFilename = args[i];
+			} else if(args[i] == "-s") {
+				i++;
+				if(outFileCheck(args[i]))
+					return OUT_FILE_ERROR;
+				argList.oFilename = args[i];
+				argList.storeToFile = 1;
 			} else if (args[i] == "-o"){
 				argList.printToScreen = 1;
-			} else if(args[i] == "-p") {
-				argList.preProcess = 1;
 			} else {
 				return USAGE_ERROR;
 			}
@@ -70,6 +73,22 @@ public:
 			if(args[i] == arg && i + 1 < argc)
 				return args[i + 1];
 		return "NONE";
+	}
+	int inFileCheck(std::string filename)
+	{
+		std::ifstream testFile(filename);
+		if(testFile.good())
+			return 0;
+		else
+			return IN_FILE_ERROR;
+	}
+	int outFileCheck(std::string filename)
+	{
+		std::ofstream testFile(filename);
+		if(testFile.good())
+			return 0;
+		else
+			return OUT_FILE_ERROR;
 	}
 private:
 	int argc;
