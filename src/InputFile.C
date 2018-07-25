@@ -10,13 +10,13 @@
  * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
-#include "includes/InputFile.H"
+#include "InputFile.H"
 
 bool InputFile::readFastQ()
 {
 	std::string seqLine = "";
 	std::string qualLine = "";
-	long i = 3, j = 1;
+	int64_t i = 3, j = 1;
 	short len = 0;
 
 	std::ifstream inpFile(filename.c_str());

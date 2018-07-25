@@ -10,7 +10,7 @@
  * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
-#include "includes/GTree.H"
+#include "GTree.H"
 
 #ifdef __MINGW64__
 #include <sstream>
@@ -44,10 +44,10 @@ namespace GTH {
 		}
 	}
 
-	short mostOccs(Node *node)
+	signed short mostOccs(Node *node)
 	{
 		short ind = -1;
-		long occCnt = 0;
+		int64_t occCnt = 0;
 		for(int i = 0; i < NBASES; i++) {
 			Node* tmpNode = node->subnodes[i];
 			if(tmpNode && tmpNode->occs > occCnt) {
@@ -69,7 +69,7 @@ namespace GTH {
 		return children;
 	}
 
-	float getNewWeight(double curWeight, long occs, char qual)
+	float getNewWeight(double curWeight, int64_t occs, char qual)
 	{
 		// Cumulative average: A_{n+1} = ((A_n + x_{n+1}) - A_n) / n + 1
 		return curWeight += ((static_cast<double>(qual) - curWeight) /
@@ -109,7 +109,7 @@ GTree::GTree():
 void GTree::createRoot(short ind)
 {
 	int offset = -1;
-	uint i;
+	uint32_t i;
 	char qual;
 	root = &(nodes[nodesCnt][head]);
 
@@ -140,7 +140,7 @@ void GTree::createRoot(short ind)
 	}
 }
 
-void GTree::createNode(Node *node, short ind, char qual, long rN, int offset)
+void GTree::createNode(Node *node, short ind, char qual, uint64_t rN, int offset)
 {
 	omp_set_lock(&lock);
 	head++;
@@ -164,7 +164,7 @@ void GTree::createNode(Node *node, short ind, char qual, long rN, int offset)
 }
 
 /** --------------- Read Processing ---------------- **/
-void GTree::addReadOne(long readNum, short offset) 
+void GTree::addReadOne(uint64_t readNum, short offset) 
 {
 	std::vector<Node*> paths;
 
@@ -211,7 +211,7 @@ bool GTree::balanceNode(Node *node, bool mode)
 {
 	std::vector<Node*> paths;
 	// Get the offset and read before overiding/updating
-	long lReadNum = node->readNum;
+	int64_t lReadNum = node->readNum;
 	SeqRead *lRead = &GTH::seqReads[lReadNum];
 	short lOffset = node->offset + 1;
 	short tmpOff = lOffset;
@@ -237,7 +237,7 @@ bool GTree::balanceNode(Node *node, bool mode)
 	node = node->subnodes[lInd];
 
 	// If the paths follow the same route:
-	long rReadNum = node->readNum;
+	int64_t rReadNum = node->readNum;
 	SeqRead *rRead = &GTH::seqReads[rReadNum];
 	short rOffset = node->offset + 1;
 	short rInd = 0;
@@ -301,11 +301,11 @@ void GTree::followPath(Node *node, short ind, std::string &sequence)
 	} while(children);
 }
 
-void GTree::addToSeq(long offset, std::string &sequence)
+void GTree::addToSeq(uint64_t offset, std::string &sequence)
 {
 	Node *node = root;
 	short ind = 0;
-	uint i, j, seqLength = sequence.length() - offset;
+	uint32_t i, j, seqLength = sequence.length() - offset;
 	Node **path = new Node*[seqLength];
 
 	for(i = 0; i < seqLength; i++)
@@ -397,7 +397,7 @@ void GTree::printAllPaths(Node* node, int len, short label)
 	occuPaths += "-";
 	basePaths.erase(len, basePaths.length());
 	basePaths += GTH::retLabel(label);
-	for(uint i = 0; i < val.length(); i++)
+	for(uint32_t i = 0; i < val.length(); i++)
 		basePaths += '-';
 	len += val.length() + 1;
 	bool check = 0;

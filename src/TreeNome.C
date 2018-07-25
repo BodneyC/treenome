@@ -11,16 +11,13 @@
  *
  *******************************************************************/
 /* TODO:
- * - Data race or algorithm?
- * - Derive leafNode from Node (somehow)
- * - Pre-processing of reads, consider qualities in this
+ * - Double accuracy?
+ * - Reconstruct tree from file (possible second program)
  * - Quality vs. occurrences in sequence creation
- * - put() function in SeqRead
- * - Output file for printTrees() and printSequence()
  */
-#include "includes/ArgParser.H"
-#include "includes/InputFile.H"
-#include "includes/GTree.H"
+#include "ArgParser.H"
+#include "InputFile.H"
+#include "TreeTop.H"
 
 void argHelp()
 {

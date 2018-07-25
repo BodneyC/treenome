@@ -10,7 +10,7 @@
  * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
-#include "includes/SeqRead.H"
+#include "SeqRead.H"
 
 // Order important here, matches BASE_IND()
 char SeqRead::ind2base[4] = { 'A', 'C', 'T', 'G' };
@@ -19,7 +19,7 @@ SeqRead::SeqRead(const std::string &read, std::string qual)
 {
 	qualities = qual;
 
-	for(uint i = 0; i < read.length(); i++)
+	for(uint32_t i = 0; i < read.length(); i++)
 		pushBase(BASE_IND(read[i]));
 }
 

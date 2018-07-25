@@ -20,8 +20,6 @@
 #include <vector>
 #include <string>
 
-typedef unsigned int uint;
-
 class SeqRead {
 public:
 	SeqRead(): qualities("") {  }

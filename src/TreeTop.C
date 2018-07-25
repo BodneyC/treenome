@@ -10,8 +10,8 @@
  * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
-#include "includes/GTree.H"
-#include "includes/InputFile.H"
+#include "TreeTop.H"
+#include "InputFile.H"
 
 TreeTop::TreeTop(): 
 	sequence(""), nReads(0), readLength(0)
@@ -21,7 +21,7 @@ TreeTop::TreeTop():
 }
 
 /** --------------- Read Processing ---------------- **/
-void TreeTop::threadFunc(unsigned long i)
+void TreeTop::threadFunc(uint64_t i)
 {
 	for(short j = 0; j < GTH::seqReads[i].size(); j++)
 		//if(GTH::seqReads[i].getBaseInd(j) == 3)
@@ -32,7 +32,7 @@ void TreeTop::processReadsOne()
 {
 #pragma omp parallel num_threads(NUM_THREADS)
 {
-	for(unsigned long i = 0; i < GTH::seqReads.size(); i += NUM_THREADS) {
+	for(uint64_t i = 0; i < GTH::seqReads.size(); i += NUM_THREADS) {
 	//std::cout << i << std::endl;
 #pragma omp for schedule(static, 1)
 	for(int j = 0; j < NUM_THREADS; j++) 
@@ -57,7 +57,7 @@ bool TreeTop::rootOccsExist()
 short TreeTop::maxPath()
 {
 	int start = 0;
-	long maxOccs = 0;
+	int64_t maxOccs = 0;
 	Node* treeRoots[NBASES];
 
 	for(short i = 0; i < NBASES; i++) {
@@ -77,12 +77,12 @@ void TreeTop::buildSequence()
 {
 	maxPath();
 
-	long offset = 1;
+	uint64_t offset = 1;
 	while(rootOccsExist()) {
 
 		// Possibly make is a tighter gap as its working from single letters
 		// (this would actually be the k-mer match)
-		if((unsigned) offset == sequence.length() - 1) {
+		if(offset == sequence.length() - 1) {
 			sequence += 'N';
 			maxPath();
 			offset += 2;
@@ -111,7 +111,7 @@ void TreeTop::printSequence()
 {
 	// 80 for terminal width's sake
 	unsigned short TWIDTH = 80;
-	unsigned long i = 0;
+	uint64_t i = 0;
 
 	if(sequence.length() > TWIDTH)
 		for(; i < sequence.length() - TWIDTH; i += TWIDTH)

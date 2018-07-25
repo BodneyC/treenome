@@ -1,4 +1,4 @@
-#include "includes/GTree.H"
+#include "Node.H"
 
 Node::Node(): occs(0), weight(0), offset(0), readNum(0)
 {
@@ -10,7 +10,7 @@ Node::Node(): occs(0), weight(0), offset(0), readNum(0)
 Node::Node(const Node& tmpNode) 
 {
 	float tmpWeight = tmpNode.weight;
-	long tmpOccs = tmpNode.occs;
+	int64_t tmpOccs = tmpNode.occs;
 
 	omp_init_lock(&lock);
 	weight = tmpWeight;
@@ -24,7 +24,7 @@ Node::Node(const Node& tmpNode)
 Node& Node::operator=(const Node& tmpNode) 
 {
 	float tmpWeight = tmpNode.weight;
-	long tmpOccs = tmpNode.occs;
+	int64_t tmpOccs = tmpNode.occs;
 
 	omp_init_lock(&lock);
 	this->weight = tmpWeight;
