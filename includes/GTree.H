@@ -27,8 +27,8 @@ namespace GTH {
 	float getNewWeight(float curWeight, uint64_t occs, char qual);
 	void updateWeight(Node* node, char qual);
 	char retLabel(int label);
-	signed short mostOccs(Node *node);
-	short countChildren(Node *node);
+	signed short mostOccs(Node* node);
+	short countChildren(Node* node);
 }
 
 // GTree class used in construction and destruction of tree
@@ -40,11 +40,11 @@ public:
 	/* Tree creation functions */
 	void createRoot(short ind);
 	void addReadOne(uint64_t readNum, short offset); 
-	bool balanceNode(Node *node, bool mode);
+	bool balanceNode(Node* node, bool mode);
 
 	/* Sequence creation functions */
 	void addToSeq(uint64_t offset, std::string &sequence);
-	void followPath(Node *node, short ind, std::string &sequence);
+	void followPath(Node* node, short ind, std::string &sequence);
 
 	/* Usefull non-essential */
 	Node* getRoot() { 
@@ -60,16 +60,16 @@ public:
 	std::string storeTree(short label);
 private:
 	Node* root;
-	std::atomic< uint64_t > head, nodesCnt;
+	std::atomic<uint64_t> head, nodesCnt, nNodes;
 	std::vector< std::vector< Node > > nodes;
 	std::string basePaths, occuPaths, treeString;
 	omp_lock_t lock;
 
 	/* Creation/destruction */
-	void createNode(Node *node, short label, char qual, uint64_t rN, int offset);
+	void createNode(Node* node, short label, char qual, uint64_t rN, int offset);
 
 	/* Public->private overloads */
-	void printAllPaths(Node *node, int len, short label);
+	void printAllPaths(Node* node, int len, short label);
 	void storeTree(Node* node);
 };
 

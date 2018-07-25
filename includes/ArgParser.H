@@ -59,7 +59,7 @@ public:
 					return IN_FILE_ERROR;
 				argList.lFilename = args[i];
 				argList.loadFile = 1;
-			} else if (args[i] == "-o"){
+			} else if(args[i] == "-o"){
 				argList.printToScreen = 1;
 			} else {
 				return USAGE_ERROR;

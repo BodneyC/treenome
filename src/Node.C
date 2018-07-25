@@ -1,3 +1,15 @@
+/********************************************************************
+ * Filename: Node.C [C++ source code]
+ *
+ * Description: Implementation of Node class
+ *
+ * Author: Primary - Benjamin Carrington
+ *		   Secondary - Dr. Ben Mora
+ *
+ * Organisation: Swansea University
+ * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ *
+ *******************************************************************/
 #include "Node.H"
 
 Node::Node(): occs(0), weight(0), offset(0), readNum(0)
@@ -35,6 +47,6 @@ Node& Node::operator=(const Node& tmpNode)
 	for(int i = 0; i < NBASES; i++)
 		this->subnodes[i] = tmpNode.subnodes[i];
 
-	return *this;
+	return* this;
 }
 
