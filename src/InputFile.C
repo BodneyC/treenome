@@ -10,7 +10,7 @@
  * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
-#include "InputFile.H"
+#include "../includes/InputFile.H"
 
 bool InputFile::readFastQ()
 {

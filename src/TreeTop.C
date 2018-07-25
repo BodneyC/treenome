@@ -10,8 +10,8 @@
  * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
-#include "TreeTop.H"
-#include "InputFile.H"
+#include "../includes/TreeTop.H"
+#include "../includes/InputFile.H"
 
 TreeTop::TreeTop(): 
 	sequence(""), nReads(0), readLength(0)

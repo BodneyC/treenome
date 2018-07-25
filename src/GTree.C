@@ -10,7 +10,7 @@
  * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
-#include "GTree.H"
+#include "../includes/GTree.H"
 
 #ifdef __MINGW64__
 #include <sstream>

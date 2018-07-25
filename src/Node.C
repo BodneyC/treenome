@@ -10,7 +10,7 @@
  * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
-#include "Node.H"
+#include "../includes/Node.H"
 
 Node::Node(): occs(0), weight(0), offset(0), readNum(0)
 {

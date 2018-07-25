@@ -10,7 +10,7 @@
  * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
-#include "SeqRead.H"
+#include "../includes/SeqRead.H"
 
 // Order important here, matches BASE_IND()
 char SeqRead::ind2base[4] = { 'A', 'C', 'T', 'G' };

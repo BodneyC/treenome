@@ -15,9 +15,9 @@
  * - Reconstruct tree from file (possible second program)
  * - Quality vs. occurrences in sequence creation
  */
-#include "ArgParser.H"
-#include "InputFile.H"
-#include "TreeTop.H"
+#include "../includes/ArgParser.H"
+#include "../includes/InputFile.H"
+#include "../includes/TreeTop.H"
 
 void argHelp()
 {
