@@ -22,11 +22,12 @@
 #define OUT_FILE_ERROR -3
 
 struct CMDArgs {
-	std::string iFilename, oFilename;
-	bool printToScreen, storeToFile;
+	std::string iFilename, oFilename, lFilename;
+	bool printToScreen, storeToFile, loadFile;
 
 	CMDArgs(): 
-		iFilename(""), oFilename(""), printToScreen(0), storeToFile(0) {  }
+		iFilename(""), oFilename(""), lFilename(""),
+		printToScreen(0), storeToFile(0), loadFile(0) {  }
 };
 
 class ArgParser {
@@ -52,6 +53,12 @@ public:
 					return OUT_FILE_ERROR;
 				argList.oFilename = args[i];
 				argList.storeToFile = 1;
+			} else if (args[i] == "-l") {
+				i++;
+				if(inFileCheck(args[i]))
+					return IN_FILE_ERROR;
+				argList.lFilename = args[i];
+				argList.loadFile = 1;
 			} else if (args[i] == "-o"){
 				argList.printToScreen = 1;
 			} else {
