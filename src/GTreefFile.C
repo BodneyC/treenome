@@ -21,12 +21,13 @@ struct NodeInfo {
 	NodeInfo(): ind(0), comCnt(0), occs(0), weight(0) {  }
 };
 
-void GTreefFile::getNextNode(struct NodeInfo& nInf, std::stringstream& ss)
+bool GTreefFile::getNextNode(struct NodeInfo& nInf, std::stringstream& ss)
 {
 	std::string line;
 	char tmpChar;
 	while(1) {
-		ss >> tmpChar;
+		if(!(ss >> tmpChar))
+			return 1;
 		if(tmpChar != ',')
 			break;
 		nInf.comCnt++;
@@ -37,15 +38,21 @@ void GTreefFile::getNextNode(struct NodeInfo& nInf, std::stringstream& ss)
 	nInf.occs = std::stol(line);
 	std::getline(ss, line, ';');
 	nInf.weight = std::stod(line);
+
+	return 0;
 }
 
 void GTreefFile::createNode(struct NodeInfo& nInf)
 {
-	for(int i = 0; i < nInf.comCnt; i++)
+	for(int i = 0; i < nInf.comCnt; i++) {
+		//std::cout << tmpNode << std::endl;
 		tmpNode = tmpNode->parent;
+	}
 	
 	tmpNode->subnodes[nInf.ind] = &(pNodes[head]);
 	head++;
+
+	tmpNode->subnodes[nInf.ind]->parent = tmpNode;
 	tmpNode = tmpNode->subnodes[nInf.ind];
 
 	tmpNode->occs = nInf.occs;
@@ -74,9 +81,10 @@ void GTreefFile::processSString(std::stringstream& ss)
 
 	createRoot(ss);
 
-	for(unsigned int i = 0; i < nNodes; i++) {
+	for(unsigned int i = 0; i <= nNodes; i++) {
 		struct NodeInfo nInf;
-		getNextNode(nInf, ss);
+		if(getNextNode(nInf, ss))
+			break;
 		createNode(nInf);
 	}
 }

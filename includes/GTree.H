@@ -103,7 +103,7 @@ private:
 
 	void createRoot(std::stringstream& ss);
 	void createNode(struct NodeInfo& nInf);
-	void getNextNode(struct NodeInfo& nInf, std::stringstream& ss);
+	bool getNextNode(struct NodeInfo& nInf, std::stringstream& ss);
 
 };
 

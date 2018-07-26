@@ -73,6 +73,8 @@ signed int loadTreeFromFile(struct CMDArgs& argList)
 {
 	TreeTopfFile treeTop(argList.lFilename);
 	treeTop.reconstructTrees();
+	if(argList.printToScreen)
+		treeTop.printTrees();
 
 	return USAGE_ERROR;
 }

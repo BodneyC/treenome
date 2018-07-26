@@ -28,18 +28,8 @@ void TreeTopfFile::reconstructTrees()
 		i++;
 	}
 
-	int nNodes[NBASES];
-
 	for(int i = 0; i < NBASES; i++) {
-		std::getline(ss[i], line, '\n');
-		nNodes[i] = std::stol(line);
-		std::getline(ss[i], line, '\n');
-	}
-
-	for(int i = 0; i < NBASES; i++) {
-		for(int j = 0; j < nNodes[i]; j++) {
-
-		}
+		trees[i].processSString(ss[i]);
 	}
 }
 
