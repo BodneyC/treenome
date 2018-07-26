@@ -13,26 +13,38 @@
 #ifndef _TREETOP_
 #define _TREETOP_
 
+#include <sstream>
 #include "GTree.H"
 
 // Structure which holds read data and the four GTrees
-typedef struct TreeTop {
-	std::string sequence, treeStrings[NBASES];
-	int64_t nReads;
-	int readLength;
-	GTree trees[NBASES];
+template <typename T>
+class TreeTop {
+public:
+	std::string treeStrings[NBASES];
 
 	TreeTop();
 
-	void createRoots();
-	void threadFunc(uint64_t i);
+	/* From reads */
 	void processReadsOne();
+
+	/* From file */
+	void reconstructTree(std::stringstream ss[NBASES]);
+
+	/* Common */
 	void buildSequence();
-	short maxPath();
-	bool rootOccsExist();
-	void printSequence();
 	void printTrees();
 	void storeTrees();
-} TreeTop;
+	void printSequence();
+private:
+	std::string sequence;
+	int64_t nReads;
+	int readLength;
+	T trees[NBASES];
+
+	void createRoots();
+	short maxPath();
+	bool rootOccsExist();
+	void threadFunc(uint64_t i);
+};
 
 #endif /*_TREETOP_*/

@@ -73,5 +73,16 @@ private:
 	void storeTree(Node* node);
 };
 
+class GTreefReads : public GTree {
+public:
+
+private:
+
+};
+
+class GTreefFile : public GTree {
+
+};
+
 #endif /*_GTREE_*/
 

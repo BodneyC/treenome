@@ -13,22 +13,44 @@
 #include "../includes/TreeTop.H"
 #include "../includes/InputFile.H"
 
-TreeTop::TreeTop(): 
+template <typename T>
+TreeTop<T>::TreeTop(): 
 	sequence(""), nReads(0), readLength(0)
 {
 	for(int i = 0; i < NBASES; i++)
 		trees[i].createRoot(i);
 }
 
+/** ------------ Tree Reconstruction --------------- **/
+template <typename T>
+void TreeTop<T>::reconstructTree(std::stringstream ss[NBASES])
+{
+	int nNodes[NBASES];
+	std::string line;
+
+	for(int i = 0; i < NBASES; i++) {
+		std::getline(ss[i], line, '\n');
+		nNodes[i] = std::stol(line);
+	}
+
+	for(int i = 0; i < NBASES; i++) {
+		for(int j = 0; j < nNodes[i]; j++) {
+
+		}
+	}
+}
+
 /** --------------- Read Processing ---------------- **/
-void TreeTop::threadFunc(uint64_t i)
+template <typename T>
+void TreeTop<T>::threadFunc(uint64_t i)
 {
 	for(short j = 0; j < GTH::seqReads[i].size(); j++)
 		//if(GTH::seqReads[i].getBaseInd(j) == 3)
 			trees[GTH::seqReads[i].getBaseInd(j)].addReadOne(i, j);
 }
 
-void TreeTop::processReadsOne()
+template <typename T>
+void TreeTop<T>::processReadsOne()
 {
 #pragma omp parallel num_threads(NUM_THREADS)
 {
@@ -43,7 +65,8 @@ void TreeTop::processReadsOne()
 }
 
 /** ------------- Sequence Generation -------------- **/
-bool TreeTop::rootOccsExist()
+template <typename T>
+bool TreeTop<T>::rootOccsExist()
 {
 	short ret = 0;
 
@@ -54,7 +77,8 @@ bool TreeTop::rootOccsExist()
 	return ret == NBASES ? 0 : 1;
 }
 
-short TreeTop::maxPath()
+template <typename T>
+short TreeTop<T>::maxPath()
 {
 	int start = 0;
 	int64_t maxOccs = 0;
@@ -73,7 +97,8 @@ short TreeTop::maxPath()
 	return start;
 }
 
-void TreeTop::buildSequence()
+template <typename T>
+void TreeTop<T>::buildSequence()
 {
 	maxPath();
 
@@ -95,19 +120,22 @@ void TreeTop::buildSequence()
 }
 
 /** --------------- Misc Functions ----------------- **/
-void TreeTop::storeTrees()
+template <typename T>
+void TreeTop<T>::storeTrees()
 {
 	for(int i = 0; i < NBASES; i++)
 		treeStrings[i] = trees[i].storeTree(i);
 }
 
-void TreeTop::printTrees()
+template <typename T>
+void TreeTop<T>::printTrees()
 {
 	for(int i = 0; i < NBASES; i++)
 		trees[i].printAllPaths(i);
 }
 
-void TreeTop::printSequence()
+template <typename T>
+void TreeTop<T>::printSequence()
 {
 	// 80 for terminal width's sake
 	unsigned short TWIDTH = 80;
@@ -119,4 +147,7 @@ void TreeTop::printSequence()
 
 	std::cout << sequence.substr(i, sequence.length() - i) << std::endl;
 }
+
+template class TreeTop<GTree>;
+template class TreeTop<GTreefReads>;
 

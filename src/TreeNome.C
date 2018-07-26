@@ -37,14 +37,14 @@ void argHelp()
 		<< std::endl;
 }
 
-void writeTreesToDisk(std::string oFilename, TreeTop& treeTop)
+void writeTreesToDisk(std::string oFilename, TreeTop<GTreefReads>& treeTop)
 {
 	std::ofstream outFile(oFilename);
 	for(int i = 0; i < NBASES; i++)
 		outFile << treeTop.treeStrings[i].c_str() << std::endl;
 }
 
-signed int createTreeBuildSequence(struct CMDArgs& argList)
+signed int createTreeFromReads(struct CMDArgs& argList)
 {
 	InputFile inpFile(argList.iFilename);
 	if(!inpFile.readFastQ()) {
@@ -54,7 +54,7 @@ signed int createTreeBuildSequence(struct CMDArgs& argList)
 		std::cout << inpFile.nReads << " records found\n" << std::endl;
 	}
 
-	TreeTop treeTop;
+	TreeTop<GTreefReads> treeTop;
 	treeTop.processReadsOne();
 	std::cout << "\n----------" << std::endl;
 	if(argList.printToScreen)
@@ -71,6 +71,20 @@ signed int createTreeBuildSequence(struct CMDArgs& argList)
 
 signed int loadTreeFromFile(struct CMDArgs& argList)
 {
+	std::ifstream inFile(argList.lFilename);
+	std::stringstream ss[NBASES];
+	std::string line;
+
+	int i = 0;
+	while(std::getline(inFile, line)) {
+		ss[i / 2] << line;
+		if(!(i % 2))
+			ss[i / 2] << '\n';
+		i++;
+	}
+
+	TreeTop<GTree> treeTop;
+	treeTop.reconstructTree(ss);
 
 	return USAGE_ERROR;
 }
@@ -80,11 +94,11 @@ int main(int argc, char** argv)
 	omp_set_num_threads(NUM_THREADS);
 	ArgParser argParser(argc, argv);
 	struct CMDArgs argList;
-	int argSucc = argParser.fillArgs(argList), progSucc;
+	int progFail = argParser.fillArgs(argList);
 
-	if(argSucc)
+	if(progFail)
 		argHelp();
-	switch (argSucc) {
+	switch (progFail) {
 	case USAGE_ERROR:
 		std::cout << "[ERR]: Incorrect command usage" << std::endl;
 		return USAGE_ERROR;
@@ -96,13 +110,13 @@ int main(int argc, char** argv)
 		return OUT_FILE_ERROR;
 	}
 
-	if(argList.loadFile)
-		progSucc = loadTreeFromFile(argList);
-	else
-		progSucc = createTreeBuildSequence(argList);
-
-	if(progSucc)
-		return progSucc;
+	if(argList.loadFile) {
+		progFail = loadTreeFromFile(argList);
+	} else {
+		progFail = createTreeFromReads(argList);
+	}
+	if(progFail)
+		return progFail;
 
 	return 0;
 }
