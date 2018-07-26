@@ -24,6 +24,8 @@ int ArgParser::fillArgs(struct CMDArgs &argList)
 	for(int i = 0; i < argc; i++) {
 		if(args[i] == "-f") {
 			i++;
+			if(argExists("-l"))
+				return USAGE_ERROR;
 			if(inFileCheck(args[i]))
 				return IN_FILE_ERROR;
 			argList.iFilename = args[i];
@@ -35,6 +37,8 @@ int ArgParser::fillArgs(struct CMDArgs &argList)
 			argList.storeToFile = 1;
 		} else if (args[i] == "-l") {
 			i++;
+			if(argExists("-f") or argExists("-s"))
+				return USAGE_ERROR;
 			if(inFileCheck(args[i]))
 				return IN_FILE_ERROR;
 			argList.lFilename = args[i];
