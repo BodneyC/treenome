@@ -22,14 +22,14 @@
 void argHelp()
 {
 	std::cout << "\nCommand usage: \n\n"
-		"\t  ./TreeNome [-f ./path/to/inFile] [-o] [-s ./path/to/outFile]"
+		"\t  ./TreeNome [-f ./path/to/inFile] [-o] [-s ./path/to/outFile] [-l ./path/to/TreeNome_outFile (-s)]"
 		"\nWhere:\n\n"
 		"\t  -f <string>\n"
-		"\t   Path to fastq input file\n\n"
+		"\t   Path to fastq input file [cannot be used in conjunction with -l]\n\n"
 		"\t  -h\n"
 		"\t   Print command line help\n\n"
 		"\t  -l <string>\n"
-		"\t   Load tree from file (as outputted by TreeNome)\n\n"
+		"\t   Load tree from file outputted by TreeNome [cannot be used in conjunction with -f]\n\n"
 		"\t  -o\n"
 		"\t   Output to screen\n\n"
 		"\t  -s <string>\n"
@@ -54,7 +54,7 @@ signed int createTreeFromReads(struct CMDArgs& argList)
 		std::cout << inpFile.nReads << " records found\n" << std::endl;
 	}
 
-	TreeTop<GTreefReads> treeTop;
+	TreeTopfReads treeTop;
 	treeTop.processReadsOne();
 	std::cout << "\n----------" << std::endl;
 	if(argList.printToScreen)
@@ -71,20 +71,8 @@ signed int createTreeFromReads(struct CMDArgs& argList)
 
 signed int loadTreeFromFile(struct CMDArgs& argList)
 {
-	std::ifstream inFile(argList.lFilename);
-	std::stringstream ss[NBASES];
-	std::string line;
-
-	int i = 0;
-	while(std::getline(inFile, line)) {
-		ss[i / 2] << line;
-		if(!(i % 2))
-			ss[i / 2] << '\n';
-		i++;
-	}
-
-	TreeTop<GTree> treeTop;
-	treeTop.reconstructTree(ss);
+	TreeTopfFile treeTop(argList.lFilename);
+	treeTop.reconstructTrees();
 
 	return USAGE_ERROR;
 }
@@ -96,18 +84,20 @@ int main(int argc, char** argv)
 	struct CMDArgs argList;
 	int progFail = argParser.fillArgs(argList);
 
-	if(progFail)
-		argHelp();
 	switch (progFail) {
 	case USAGE_ERROR:
 		std::cout << "[ERR]: Incorrect command usage" << std::endl;
-		return USAGE_ERROR;
+		break;
 	case IN_FILE_ERROR:
 		std::cout << "[ERR]: Input file not supplied or not present" << std::endl;
-		return IN_FILE_ERROR;
+		break;
 	case OUT_FILE_ERROR:
 		std::cout << "[ERR]: Output file not supplied or not present" << std::endl;
-		return OUT_FILE_ERROR;
+		break;
+	}
+	if(progFail) {
+		argHelp();
+		return progFail;
 	}
 
 	if(argList.loadFile) {
