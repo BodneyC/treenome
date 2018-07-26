@@ -15,21 +15,23 @@
 // Order important here, matches BASE_IND()
 char SeqRead::ind2base[4] = { 'A', 'C', 'T', 'G' };
 
-SeqRead::SeqRead(const std::string &read, std::string qual)
+SeqRead::SeqRead( const std::string &read, std::string qual, int pB )
 {
+	for( uint32_t i = 0; i < read.length(); i++ ) {
+		pushBase( BASE_IND( read[i] ) );
+		qual[i] -= pB;
+	}
+
 	qualities = qual;
-
-	for(uint32_t i = 0; i < read.length(); i++)
-		pushBase(BASE_IND(read[i]));
 }
 
-void SeqRead::pushBase(char base)
+void SeqRead::pushBase( char base )
 {
-	sequence.push_back(base & 0x02);
-	sequence.push_back(base & 0x01);
+	sequence.push_back( base & 0x02 );
+	sequence.push_back( base & 0x01 );
 }
 
-short SeqRead::getBaseInd(short offset)
+short SeqRead::getBaseInd( short offset )
 {
 	offset *= 2;
 	short retVal = sequence[offset];
@@ -39,13 +41,13 @@ short SeqRead::getBaseInd(short offset)
 	return retVal;
 }
 
-char SeqRead::getCharBase(short ind)
+char SeqRead::getCharBase( short ind )
 {
-	ind = getBaseInd(ind);
+	ind = getBaseInd( ind );
 	return ind2base[ind];
 }
 
-char SeqRead::getQual(short offset)
+char SeqRead::getQual( short offset )
 {
 	return qualities[offset];
 }

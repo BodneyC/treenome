@@ -8,7 +8,7 @@
  *		   Secondary - Dr. Ben Mora
  *
  * Organisation: Swansea University
- * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ * Copyright ( c ) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
 #ifndef _GTREE_
@@ -20,16 +20,17 @@
 #include <vector>
 #include "SeqRead.H"
 #include "Node.H"
+#include "Phred33.H"
 
 // GTree Helpers
 namespace GTH {
 	extern std::vector<SeqRead> seqReads;
 
-	char retLabel(int label);
-	float getNewWeight(double curWeight, int64_t occs, char qual);
-	void removeDoubleEnding(std::string& doubleString);
+	char retLabel( int label );
+	float getNewWeight( double curWeight, int64_t occs, char qual );
+	void removeDoubleEnding( std::string& doubleString );
 	template <typename T>
-	std::string valToString(T& val);
+	std::string valToString( T& val );
 }
 
 // GTree class used in construction and destruction of tree
@@ -40,21 +41,21 @@ public:
 	~GTree() {  }
 
 	/* Sequence creation functions */
-	void addToSeq(uint64_t offset, std::string &sequence);
-	void followPath(T* node, short ind, std::string &sequence);
+	void addToSeq( uint64_t offset, std::string &sequence );
+	void followPath( T* node, short ind, std::string &sequence );
 
 	/* Usefull non-essential */
 	T* getRoot() { 
-		if(root) 
+		if( root ) 
 			return root; 
 		else 
 			return nullptr; 
 	}
-	void printAllPaths(short label) { 
-		printAllPaths(root, 0, label);
+	void printAllPaths( short label ) { 
+		printAllPaths( root, 0, label );
 		basePaths = occuPaths = "";
 	}
-	std::string storeTree(short label);
+	std::string storeTree( short label );
 protected:
 	T* root;
 	std::atomic<uint64_t> head, nNodes;
@@ -65,13 +66,13 @@ protected:
 	//virtual void createNode();
 
 	/* Helpers requiring templates */
-	signed short mostOccs(T* node);
-	short countChildren(T* node);
-	void updateWeight(T* node, char qual);
+	signed short mostOccs( T* node );
+	short countChildren( T* node );
+	void updateWeight( T* node, char qual );
 
 	/* Public->private overloads */
-	void printAllPaths(T* node, int len, short label);
-	void storeTree(T* node);
+	void printAllPaths( T* node, int len, short label );
+	void storeTree( T* node );
 };
 
 class GTreefReads : public GTree<Node> {
@@ -79,31 +80,31 @@ public:
 	GTreefReads();
 
 	/* Tree creation functions */
-	void createRoot(short ind);
-	void addReadOne(uint64_t readNum, short offset); 
-	bool balanceNode(Node* node, bool mode);
+	void createRoot( short ind );
+	void addReadOne( uint64_t readNum, short offset ); 
+	bool balanceNode( Node* node, bool mode );
 
 
 private:
 	std::vector< std::vector< Node > > nodes;
-	void createNode(Node* node, short label, char qual, uint64_t rN, int offset);
+	void createNode( Node* node, short label, char qual, uint64_t rN, int offset );
 	std::atomic<uint64_t> nodesCnt;
 
 };
 
 class GTreefFile : public GTree<pNode> {
 public:
-	GTreefFile(): tmpNode(nullptr) {  }
+	GTreefFile(): tmpNode( nullptr ) {  }
 
-	void processSString(std::stringstream& ss);
+	void processSString( std::stringstream& ss );
 
 private:
 	pNode* tmpNode;
 	std::vector< pNode > pNodes;
 
-	void createRoot(std::stringstream& ss);
-	void createNode(struct NodeInfo& nInf);
-	void getNextNode(struct NodeInfo& nInf, std::stringstream& ss);
+	void createRoot( std::stringstream& ss );
+	void createNode( struct NodeInfo& nInf );
+	void getNextNode( struct NodeInfo& nInf, std::stringstream& ss );
 
 };
 

@@ -18,36 +18,36 @@ struct NodeInfo {
 	int64_t occs;
 	double weight;
 
-	NodeInfo(): ind(0), comCnt(0), occs(0), weight(0) {  }
+	NodeInfo(): ind( 0 ), comCnt( 0 ), occs( 0 ), weight( 0 ) {  }
 };
 
-void GTreefFile::getNextNode(struct NodeInfo& nInf, std::stringstream& ss)
+void GTreefFile::getNextNode( struct NodeInfo& nInf, std::stringstream& ss )
 {
 	std::string line;
 	char tmpChar;
-	while(1) {
-		if(!(ss >> tmpChar))
+	while( 1 ) {
+		if( !(ss >> tmpChar) )
 			return;
-		if(tmpChar != ',')
+		if( tmpChar != ',' )
 			break;
 		nInf.comCnt++;
 	}
-	nInf.ind = BASE_IND(tmpChar);
+	nInf.ind = BASE_IND( tmpChar );
 	ss >> tmpChar;
-	std::getline(ss, line, ':');
-	nInf.occs = std::stol(line);
-	std::getline(ss, line, ';');
-	nInf.weight = std::stod(line);
+	std::getline( ss, line, ':' );
+	nInf.occs = std::stol( line );
+	std::getline( ss, line, ';' );
+	nInf.weight = std::stod( line );
 }
 
-void GTreefFile::createNode(struct NodeInfo& nInf)
+void GTreefFile::createNode( struct NodeInfo& nInf )
 {
-	for(int i = 0; i < nInf.comCnt; i++) {
+	for( int i = 0; i < nInf.comCnt; i++ ) {
 		//std::cout << tmpNode << std::endl;
 		tmpNode = tmpNode->parent;
 	}
 	
-	tmpNode->subnodes[nInf.ind] = &(pNodes[head]);
+	tmpNode->subnodes[nInf.ind] = &( pNodes[head] );
 	head++;
 
 	tmpNode->subnodes[nInf.ind]->parent = tmpNode;
@@ -57,11 +57,11 @@ void GTreefFile::createNode(struct NodeInfo& nInf)
 	tmpNode->weight = nInf.weight;
 }
 
-void GTreefFile::createRoot(std::stringstream& ss)
+void GTreefFile::createRoot( std::stringstream& ss )
 {
 	struct NodeInfo nInf;
-	getNextNode(nInf, ss);
-	root = &(pNodes[0]);
+	getNextNode( nInf, ss );
+	root = &( pNodes[0] );
 	tmpNode = root;
 	head++;
 
@@ -69,19 +69,19 @@ void GTreefFile::createRoot(std::stringstream& ss)
 	tmpNode->weight = nInf.weight;
 }
 
-void GTreefFile::processSString(std::stringstream& ss)
+void GTreefFile::processSString( std::stringstream& ss )
 {
 	std::string line;
-	std::getline(ss, line, '\n');
+	std::getline( ss, line, '\n' );
 
-	nNodes = std::stol(line);
-	pNodes.resize(nNodes);
+	nNodes = std::stol( line );
+	pNodes.resize( nNodes );
 
-	createRoot(ss);
+	createRoot( ss );
 
-	for(unsigned int i = 0; i < nNodes - 1; i++) {
+	for( unsigned int i = 0; i < nNodes - 1; i++ ) {
 		struct NodeInfo nInf;
-		getNextNode(nInf, ss);
-		createNode(nInf);
+		getNextNode( nInf, ss );
+		createNode( nInf );
 	}
 }

@@ -19,30 +19,30 @@ bool InputFile::readFastQ()
 	int64_t i = 3, j = 1;
 	short len = 0;
 
-	std::ifstream inpFile(filename.c_str());
-	if(!inpFile) {
+	std::ifstream inpFile( filename.c_str() );
+	if( !inpFile ) {
 		return 0;
 	}
 
 	// Bit of a hacky way of doing this...
-	for(std::string line; std::getline(inpFile, line); i++, j++) {
-		if(i == 3)
+	for( std::string line; std::getline( inpFile, line ); i++, j++ ) {
+		if( i == 3 )
 			readLength = line.length();
-		if(!(i % 4)) {
-			len = line.find('N');
-			line = line.substr(0, len);
+		if( !( i % 4 ) ) {
+			len = line.find( 'N' );
+			line = line.substr( 0, len );
 
 			seqLine = line;
 		}
-		if(!(j % 4)) {
-			line = line.substr(0, len);
+		if( !(j % 4) ) {
+			line = line.substr( 0, len );
 
 			qualLine = line;
-			GTH::seqReads.push_back(SeqRead(seqLine, qualLine));
+			GTH::seqReads.push_back( SeqRead( seqLine, qualLine, phredBase ) );
 		}
 	}
 
-	nReads = (i - 3) / 4;
+	nReads = ( i - 3 ) / 4;
 
 	return 1;
 }

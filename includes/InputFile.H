@@ -21,13 +21,14 @@
 #define FILE_ERROR -2
 
 // Though sparse, this class may be expanded upon for processing/changing
-// of storage mnethod
+// of storage method
 class InputFile {
 public:
 	long nReads, readLength;
+	int phredBase;
 
-	explicit InputFile(const std::string &_filename):
-		nReads(0), readLength(0), filename(_filename) {}
+	InputFile( const std::string &_filename, int _pB ):	nReads( 0 ), 
+		readLength( 0 ), phredBase( _pB ), filename( _filename ) {  }
 
 	bool readFastQ();
 

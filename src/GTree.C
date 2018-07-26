@@ -45,12 +45,12 @@ namespace GTH {
 		}
 	}
 
-	float getNewWeight(double curWeight, int64_t occs, char qual)
-	{
-		// Cumulative average: A_{n+1} = ((A_n + x_{n+1}) - A_n) / n + 1
-		return curWeight += ((static_cast<double>(qual) - curWeight) /
-				static_cast<double>(occs));
-	}
+	//float getNewWeight(double curWeight, int64_t occs, char qual)
+	//{
+	//	// Cumulative average: A_{n+1} = ((A_n + x_{n+1}) - A_n) / n + 1
+	//	return curWeight += ((static_cast<double>(qual) - curWeight) /
+	//			static_cast<double>(occs));
+	//}
 
 	void removeDoubleEnding(std::string& doubleString)
 	{
@@ -78,14 +78,15 @@ GTree<T>::GTree():
 	omp_init_lock(&lock);
 }
 
-/** --------------- Genome Creation ---------------- **/
+/** ------------- - Helper Functions --------------- **/
 template <typename T>
 void GTree<T>::updateWeight(T* node, char qual)
 {
 	double newWeight, curWeight = node->weight;
+	double pBQual = GTH::phredQuals[static_cast<int>(qual)];
 	node->occs++;
 	do {
-		newWeight = GTH::getNewWeight(curWeight, node->occs, qual);
+		newWeight = curWeight + pBQual;
 	} while(!(node->weight.compare_exchange_weak(curWeight, newWeight)));
 }
 
@@ -131,6 +132,7 @@ void GTree<T>::followPath(T* node, short ind, std::string &sequence)
 	} while(children);
 }
 
+/** --------------- Genome Creation ---------------- **/
 template <typename T>
 void GTree<T>::addToSeq(uint64_t offset, std::string &sequence)
 {
