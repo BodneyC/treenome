@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <string>
+#include <sstream>
 #include <vector>
 #include "SeqRead.H"
 #include "Node.H"
@@ -24,30 +25,26 @@
 namespace GTH {
 	extern std::vector<SeqRead> seqReads;
 
-	float getNewWeight(float curWeight, uint64_t occs, char qual);
-	void updateWeight(Node* node, char qual);
 	char retLabel(int label);
-	signed short mostOccs(Node* node);
-	short countChildren(Node* node);
+	float getNewWeight(double curWeight, int64_t occs, char qual);
+	void removeDoubleEnding(std::string& doubleString);
+	template <typename T>
+	std::string valToString(T& val);
 }
 
 // GTree class used in construction and destruction of tree
+template <typename T>
 class GTree {
 public:
 	GTree();
 	~GTree() {  }
 
-	/* Tree creation functions */
-	void createRoot(short ind);
-	void addReadOne(uint64_t readNum, short offset); 
-	bool balanceNode(Node* node, bool mode);
-
 	/* Sequence creation functions */
 	void addToSeq(uint64_t offset, std::string &sequence);
-	void followPath(Node* node, short ind, std::string &sequence);
+	void followPath(T* node, short ind, std::string &sequence);
 
 	/* Usefull non-essential */
-	Node* getRoot() { 
+	T* getRoot() { 
 		if(root) 
 			return root; 
 		else 
@@ -58,29 +55,55 @@ public:
 		basePaths = occuPaths = "";
 	}
 	std::string storeTree(short label);
-private:
-	Node* root;
-	std::atomic<uint64_t> head, nodesCnt, nNodes;
-	std::vector< std::vector< Node > > nodes;
+protected:
+	T* root;
+	std::atomic<uint64_t> head, nNodes;
 	std::string basePaths, occuPaths, treeString;
 	omp_lock_t lock;
 
 	/* Creation/destruction */
-	void createNode(Node* node, short label, char qual, uint64_t rN, int offset);
+	//virtual void createNode();
+
+	/* Helpers requiring templates */
+	signed short mostOccs(T* node);
+	short countChildren(T* node);
+	void updateWeight(T* node, char qual);
 
 	/* Public->private overloads */
-	void printAllPaths(Node* node, int len, short label);
-	void storeTree(Node* node);
+	void printAllPaths(T* node, int len, short label);
+	void storeTree(T* node);
 };
 
-class GTreefReads : public GTree {
+class GTreefReads : public GTree<Node> {
 public:
+	GTreefReads();
+
+	/* Tree creation functions */
+	void createRoot(short ind);
+	void addReadOne(uint64_t readNum, short offset); 
+	bool balanceNode(Node* node, bool mode);
+
 
 private:
+	std::vector< std::vector< Node > > nodes;
+	void createNode(Node* node, short label, char qual, uint64_t rN, int offset);
+	std::atomic<uint64_t> nodesCnt;
 
 };
 
-class GTreefFile : public GTree {
+class GTreefFile : public GTree<pNode> {
+public:
+	GTreefFile(): tmpNode(nullptr) {  }
+
+	void processSString(std::stringstream& ss);
+
+private:
+	pNode* tmpNode;
+	std::vector< pNode > pNodes;
+
+	void createRoot(std::stringstream& ss);
+	void createNode(struct NodeInfo& nInf);
+	void getNextNode(struct NodeInfo& nInf, std::stringstream& ss);
 
 };
 
