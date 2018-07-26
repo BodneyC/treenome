@@ -1,7 +1,7 @@
 /********************************************************************
- * Filename: Node.C [C++ source code]
+ * Filename: BNode.C [C++ source code]
  *
- * Description: Implementation of Node class
+ * Description: Implementation of BNode class
  *
  * Author: Primary - Benjamin Carrington
  *		   Secondary - Dr. Ben Mora
@@ -12,41 +12,43 @@
  *******************************************************************/
 #include "../includes/Node.H"
 
-Node::Node(): occs(0), weight(0), offset(0), readNum(0)
+BNode::BNode(): occs(0), weight(0)
 {
 	omp_init_lock(&lock);
-	for(int i = 0; i < NBASES; i++)
-		subnodes[i] = nullptr;
 }
 
-Node::Node(const Node& tmpNode) 
+BNode::BNode(const BNode& tmpBNode) 
 {
-	float tmpWeight = tmpNode.weight;
-	int64_t tmpOccs = tmpNode.occs;
+	float tmpWeight = tmpBNode.weight;
+	int64_t tmpOccs = tmpBNode.occs;
 
 	omp_init_lock(&lock);
 	weight = tmpWeight;
 	occs = tmpOccs;
-	offset = tmpNode.offset;
-	readNum = tmpNode.readNum;
-	for(int i = 0; i < NBASES; i++)
-		subnodes[i] = tmpNode.subnodes[i];
 }
 
-Node& Node::operator=(const Node& tmpNode) 
+BNode& BNode::operator=(const BNode& tmpBNode) 
 {
-	float tmpWeight = tmpNode.weight;
-	int64_t tmpOccs = tmpNode.occs;
+	float tmpWeight = tmpBNode.weight;
+	int64_t tmpOccs = tmpBNode.occs;
 
 	omp_init_lock(&lock);
 	this->weight = tmpWeight;
 	this->occs = tmpOccs;
-	this->offset = tmpNode.offset;
-	this->readNum = tmpNode.readNum;
-
-	for(int i = 0; i < NBASES; i++)
-		this->subnodes[i] = tmpNode.subnodes[i];
 
 	return* this;
+}
+
+Node::Node(): offset(0), readNum(0)
+{
+	for(int i = 0; i < NBASES; i++)
+		subnodes[i] = nullptr;
+}
+
+
+pNode::pNode(): parent(nullptr)
+{
+	for(int i = 0; i < NBASES; i++)
+		subnodes[i] = nullptr;
 }
 

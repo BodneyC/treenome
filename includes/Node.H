@@ -20,28 +20,35 @@
 #define NBASES 4
 #define RES 50
 #define NUM_THREADS 4
+
 #include <atomic>
 #include <omp.h>
 
 // The node type for the GTrees 
-typedef struct Node {
-	int64_t occs;
+typedef struct BNode {
+	std::atomic<int64_t> occs;
 	std::atomic<double> weight;
+	omp_lock_t lock;
+
+	BNode();
+	//Copy and assignment functions needed for atomics
+	BNode(const BNode& tmpNode);
+	BNode& operator=(const BNode& tmpNode);
+} BNode;
+
+typedef struct Node : public BNode {
 	short offset;
 	int64_t readNum;
 	Node* subnodes[NBASES];
-	omp_lock_t lock;
 
 	Node();
-	//Copy and assignment functions needed for atomics
-	Node(const Node& tmpNode);
-	Node& operator=(const Node& tmpNode);
 } Node;
 
-typedef struct pNode : Node {
-	Node* parent;
+typedef struct pNode : BNode {
+	pNode* subnodes[NBASES];
+	pNode* parent;
 
-	pNode(): parent(nullptr) {  }
+	pNode();
 } pNode;
 
 #endif /*_NODE*/
