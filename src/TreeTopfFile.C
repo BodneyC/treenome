@@ -16,20 +16,20 @@
 /** ------------ Tree Reconstruction --------------- **/
 void TreeTopfFile::reconstructTrees()
 {
-	std::ifstream inFile(iFilename);
+	std::ifstream inFile( iFilename );
 	std::stringstream ss[NBASES];
 	std::string line;
 
 	int i = 0;
-	while(std::getline(inFile, line)) {
+	while( std::getline( inFile, line ) ) {
 		ss[i / 2] << line;
-		if(!(i % 2))
+		if( !( i % 2 ) )
 			ss[i / 2] << '\n';
 		i++;
 	}
 
-	for(int i = 0; i < NBASES; i++) {
-		trees[i].processSString(ss[i]);
+	for( int i = 0; i < NBASES; i++ ) {
+		trees[i].processSString( ss[i] );
 	}
 }
 

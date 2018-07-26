@@ -7,14 +7,14 @@
  *		   Secondary - Dr. Ben Mora
  *
  * Organisation: Swansea University
- * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ * Copyright ( c ) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
 #include "../includes/TreeTop.H"
 
 template <class T>
 TreeTop<T>::TreeTop(): 
-	sequence(""), nReads(0), readLength(0)
+	sequence( "" ), nReads( 0 ), readLength( 0 )
 {
 }
 
@@ -24,8 +24,8 @@ bool TreeTop<T>::rootOccsExist()
 {
 	short ret = 0;
 
-	for(int i = 0; i < NBASES; i++)
-		if(trees[i].getRoot()->occs == 0)
+	for( int i = 0; i < NBASES; i++ )
+		if( trees[i].getRoot()->occs == 0 )
 			ret++;
 
 	return ret == NBASES ? 0 : 1;
@@ -38,15 +38,15 @@ short TreeTop<T>::maxPath()
 	int64_t maxOccs = 0;
 	int64_t curOccs;
 
-	for(short i = 0; i < NBASES; i++) {
+	for( short i = 0; i < NBASES; i++ ) {
 		curOccs = trees[i].getRoot()->occs;
-		if(curOccs > maxOccs) {
+		if( curOccs > maxOccs ) {
 			maxOccs = curOccs;
 			start = i;
 		}
 	}
 
-	trees[start].followPath(trees[start].getRoot(), start, sequence);
+	trees[start].followPath( trees[start].getRoot(), start, sequence );
 
 	return start;
 }
@@ -57,18 +57,18 @@ void TreeTop<T>::buildSequence()
 	maxPath();
 
 	uint64_t offset = 1;
-	while(rootOccsExist()) {
+	while( rootOccsExist() ) {
 
 		// Possibly make is a tighter gap as its working from single letters
-		// (this would actually be the k-mer match)
-		if(offset == sequence.length() - 1) {
+		// ( this would actually be the k-mer match )
+		if( offset == sequence.length() - 1 ) {
 			sequence += 'N';
 			maxPath();
 			offset += 2;
 		}
 
-		if(trees[BASE_IND(sequence[offset])].getRoot()->occs > 0)
-			trees[BASE_IND(sequence[offset])].addToSeq(offset, sequence);
+		if( trees[BASE_IND( sequence[offset] )].getRoot()->occs > 0 )
+			trees[BASE_IND( sequence[offset] )].addToSeq( offset, sequence );
 		offset++;
 	}
 }
@@ -77,15 +77,15 @@ void TreeTop<T>::buildSequence()
 template <class T>
 void TreeTop<T>::storeTrees()
 {
-	for(int i = 0; i < NBASES; i++)
-		treeStrings[i] = trees[i].storeTree(i);
+	for( int i = 0; i < NBASES; i++ )
+		treeStrings[i] = trees[i].storeTree( i );
 }
 
 template <class T>
 void TreeTop<T>::printTrees()
 {
-	for(int i = 0; i < NBASES; i++)
-		trees[i].printAllPaths(i);
+	for( int i = 0; i < NBASES; i++ )
+		trees[i].printAllPaths( i );
 }
 
 template <class T>
@@ -95,11 +95,11 @@ void TreeTop<T>::printSequence()
 	unsigned short TWIDTH = 80;
 	uint64_t i = 0;
 
-	if(sequence.length() > TWIDTH)
-		for(; i < sequence.length() - TWIDTH; i += TWIDTH)
-			std::cout << sequence.substr(i, TWIDTH) << std::endl;
+	if( sequence.length() > TWIDTH )
+		for( ; i < sequence.length() - TWIDTH; i += TWIDTH )
+			std::cout << sequence.substr( i, TWIDTH ) << std::endl;
 
-	std::cout << sequence.substr(i, sequence.length() - i) << std::endl;
+	std::cout << sequence.substr( i, sequence.length() - i ) << std::endl;
 }
 
 template class TreeTop<GTreefReads>;

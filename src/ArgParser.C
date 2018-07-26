@@ -12,71 +12,79 @@
  *******************************************************************/
 #include "../includes/ArgParser.H"
 
-ArgParser::ArgParser(int& argc, char** argv) 
+ArgParser::ArgParser( int& argc, char** argv ) 
 {
 	this->argc = argc;
-	for(int i = 1; i < argc; i++)
-		args.push_back(std::string(argv[i]));
+	for( int i = 1; i < argc; i++ )
+		args.push_back( std::string(argv[i]) );
 	this->argc--;
 }
-int ArgParser::fillArgs(struct CMDArgs &argList)
+int ArgParser::fillArgs( struct CMDArgs &argList )
 {
-	for(int i = 0; i < argc; i++) {
-		if(args[i] == "-f") {
+	for( int i = 0; i < argc; i++ ) {
+		if( args[i] == "-f" ) {
 			i++;
-			if(argExists("-l"))
+			if( argExists("-l") )
 				return USAGE_ERROR;
-			if(inFileCheck(args[i]))
+			if( inFileCheck(args[i]) )
 				return IN_FILE_ERROR;
 			argList.iFilename = args[i];
-		} else if(args[i] == "-s") {
+		} else if( args[i] == "-s" ) {
 			i++;
-			if(outFileCheck(args[i]))
+			if( outFileCheck(args[i]) )
 				return OUT_FILE_ERROR;
 			argList.oFilename = args[i];
 			argList.storeToFile = 1;
-		} else if (args[i] == "-l") {
+		} else if ( args[i] == "-l" ) {
 			i++;
-			if(argExists("-f") or argExists("-s"))
+			if( argExists("-f") or argExists("-s") )
 				return USAGE_ERROR;
-			if(inFileCheck(args[i]))
+			if( inFileCheck(args[i]) )
 				return IN_FILE_ERROR;
 			argList.lFilename = args[i];
 			argList.loadFile = 1;
-		} else if(args[i] == "-o"){
+		} else if( args[i] == "-o" ){
 			argList.printToScreen = 1;
+		} else if( args[i] == "--phred" ) {
+			i++;
+			if( args[i] == "33" )
+				argList.phredBase = 33;
+			else if( args[i] == "64" )
+				argList.phredBase = 64;
+			else 
+				return USAGE_ERROR;
 		} else {
 			return USAGE_ERROR;
 		}
 	}
 	return 0;
 }
-bool ArgParser::argExists(const std::string &arg)
+bool ArgParser::argExists( const std::string &arg )
 {
-	for(int i = 0; i < argc; i++)
-		if(args[i] == arg)
+	for( int i = 0; i < argc; i++ )
+		if( args[i] == arg )
 			return true;
 	return false;
 }
-const std::string ArgParser::stringOption(const std::string &arg)
+const std::string ArgParser::stringOption( const std::string &arg )
 {
-	for(int i = 0; i < argc; i++) 
-		if(args[i] == arg && i + 1 < argc)
+	for( int i = 0; i < argc; i++ ) 
+		if( args[i] == arg && i + 1 < argc )
 			return args[i + 1];
 	return "NONE";
 }
-int ArgParser::inFileCheck(std::string filename)
+int ArgParser::inFileCheck( std::string filename )
 {
-	std::ifstream testFile(filename);
-	if(testFile.good())
+	std::ifstream testFile( filename );
+	if( testFile.good() )
 		return 0;
 	else
 		return IN_FILE_ERROR;
 }
-int ArgParser::outFileCheck(std::string filename)
+int ArgParser::outFileCheck( std::string filename )
 {
-	std::ofstream testFile(filename);
-	if(testFile.good())
+	std::ofstream testFile( filename );
+	if( testFile.good() )
 		return 0;
 	else
 		return OUT_FILE_ERROR;

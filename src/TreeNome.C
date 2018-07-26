@@ -7,12 +7,12 @@
  *		   Secondary - Dr. Ben Mora
  *
  * Organisation: Swansea University
- * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ * Copyright (xcx ) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
 /* TODO:
  * - Double accuracy?
- * - Reconstruct tree from file (possible second program)
+ * - Reconstruct tree from file ( possible second program )
  * - Quality vs. occurrences in sequence creation
  */
 #include "../includes/ArgParser.H"
@@ -22,7 +22,8 @@
 void argHelp()
 {
 	std::cout << "\nCommand usage: \n\n"
-		"\t  ./TreeNome [-f ./path/to/inFile] [-o] [-s ./path/to/outFile] [-l ./path/to/TreeNome_outFile (-s)]"
+		"\t  ./TreeNome [-f ./path/to/inFile] [-o] [-s ./path/to/outFile]\n"
+		"\t        [-l ./path/to/TreeNome_outFile ( -s )] [--phred [33 | 64]]"
 		"\nWhere:\n\n"
 		"\t  -f <string>\n"
 		"\t   Path to fastq input file [cannot be used in conjunction with -l]\n\n"
@@ -32,22 +33,24 @@ void argHelp()
 		"\t   Load tree from file outputted by TreeNome [cannot be used in conjunction with -f]\n\n"
 		"\t  -o\n"
 		"\t   Output to screen\n\n"
+		"\t  --phred <int>\n"
+		"\t   Phred scoring base ( 33/64 )\n\n"
 		"\t  -s <string>\n"
 		"\t   Store tree to file\n"
 		<< std::endl;
 }
 
-void writeTreesToDisk(std::string oFilename, TreeTop<GTreefReads>& treeTop)
+void writeTreesToDisk( std::string oFilename, TreeTop<GTreefReads>& treeTop )
 {
-	std::ofstream outFile(oFilename);
-	for(int i = 0; i < NBASES; i++)
+	std::ofstream outFile( oFilename );
+	for( int i = 0; i < NBASES; i++ )
 		outFile << treeTop.treeStrings[i].c_str() << std::endl;
 }
 
-signed int createTreeFromReads(struct CMDArgs& argList)
+signed int createTreeFromReads( struct CMDArgs& argList )
 {
-	InputFile inpFile(argList.iFilename);
-	if(!inpFile.readFastQ()) {
+	InputFile inpFile( argList.iFilename, argList.phredBase );
+	if( !inpFile.readFastQ() ) {
 		std::cout << "[ERR]: Input file could not be opened" << std::endl;
 		return FILE_ERROR;
 	} else {
@@ -57,11 +60,11 @@ signed int createTreeFromReads(struct CMDArgs& argList)
 	TreeTopfReads treeTop;
 	treeTop.processReadsOne();
 	std::cout << "\n----------" << std::endl;
-	if(argList.printToScreen)
+	if( argList.printToScreen )
 		treeTop.printTrees();
-	if(argList.storeToFile) {
+	if( argList.storeToFile ) {
 		treeTop.storeTrees();
-		writeTreesToDisk(argList.oFilename, treeTop);
+		writeTreesToDisk( argList.oFilename, treeTop );
 	}
 	treeTop.buildSequence();
 	treeTop.printSequence();
@@ -69,24 +72,24 @@ signed int createTreeFromReads(struct CMDArgs& argList)
 	return 0;
 }
 
-signed int loadTreeFromFile(struct CMDArgs& argList)
+signed int loadTreeFromFile( struct CMDArgs& argList )
 {
-	TreeTopfFile treeTop(argList.lFilename);
+	TreeTopfFile treeTop( argList.lFilename );
 	treeTop.reconstructTrees();
-	if(argList.printToScreen)
+	if( argList.printToScreen )
 		treeTop.printTrees();
 
 	return USAGE_ERROR;
 }
 
-int main(int argc, char** argv)
+int main( int argc, char** argv )
 {
-	omp_set_num_threads(NUM_THREADS);
-	ArgParser argParser(argc, argv);
+	omp_set_num_threads( NUM_THREADS );
+	ArgParser argParser( argc, argv );
 	struct CMDArgs argList;
-	int progFail = argParser.fillArgs(argList);
+	int progFail = argParser.fillArgs( argList );
 
-	switch (progFail) {
+	switch ( progFail ) {
 	case USAGE_ERROR:
 		std::cout << "[ERR]: Incorrect command usage" << std::endl;
 		break;
@@ -97,17 +100,17 @@ int main(int argc, char** argv)
 		std::cout << "[ERR]: Output file not supplied or not present" << std::endl;
 		break;
 	}
-	if(progFail) {
+	if( progFail ) {
 		argHelp();
 		return progFail;
 	}
 
-	if(argList.loadFile) {
-		progFail = loadTreeFromFile(argList);
+	if( argList.loadFile ) {
+		progFail = loadTreeFromFile( argList );
 	} else {
-		progFail = createTreeFromReads(argList);
+		progFail = createTreeFromReads( argList );
 	}
-	if(progFail)
+	if( progFail )
 		return progFail;
 
 	return 0;

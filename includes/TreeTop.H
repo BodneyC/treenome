@@ -48,14 +48,14 @@ public:
 	void processReadsOne();
 private:
 	void createRoots();
-	void threadFunc(uint64_t i);
+	void threadFunc( uint64_t i );
 };
 
 // Class for processing outfiles
 class TreeTopfFile : public TreeTop<GTreefFile> {
 public:
-	explicit TreeTopfFile(const std::string& _iFilename): 
-		iFilename(_iFilename) {  }
+	explicit TreeTopfFile( const std::string& _iFilename ): 
+		iFilename( _iFilename ) {  }
 
 	void reconstructTrees();
 private:
