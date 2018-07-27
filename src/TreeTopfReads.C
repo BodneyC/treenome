@@ -13,6 +13,8 @@
  *******************************************************************/
 #include "../includes/TreeTop.H"
 
+int NUM_THREADS;
+
 TreeTopfReads::TreeTopfReads()
 {
 	for( int i = 0; i < NBASES; i++ )

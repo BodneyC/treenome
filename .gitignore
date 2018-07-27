@@ -1,7 +1,6 @@
-/obj/*.o
-/fastq/*
+obj/*.o
+fastq/*
 *.exe
 TreeNome
 OUTFILES/*
-
 scripts/*

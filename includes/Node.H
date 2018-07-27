@@ -19,10 +19,11 @@
 
 #define NBASES 4
 #define RES 50
-#define NUM_THREADS 4
 
 #include <atomic>
 #include <omp.h>
+
+extern int NUM_THREADS;
 
 // The node type for the GTrees 
 typedef struct BNode {

@@ -1,7 +1,7 @@
 CC=clang++
 CFLAGS=-g -Wall -std=c++11 -O0
 LIBS=-fopenmp
-INC=-I./includes
+INC=-I./includes -I./includes/tclap
 PROG=TreeNome
 SRC=$(wildcard src/*.C)
 OBJ=$(patsubst src/%.C, obj/%.o, $(SRC))
