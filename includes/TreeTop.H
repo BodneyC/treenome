@@ -23,7 +23,7 @@ class TreeTop {
 public:
 	std::string treeStrings[NBASES];
 
-	TreeTop();
+	TreeTop(): sequence( "" ), nReads( 0 ), readLength( 0 ) {  }
 
 	/* Common */
 	void buildSequence();

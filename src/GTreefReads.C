@@ -23,6 +23,20 @@ GTreefReads::GTreefReads(): nodesCnt( 0 )
 
 }
 /** ---------------- Tree Creation ----------------- **/
+void GTreefReads::updateWeight( Node* node, char qual ) {
+	double newWeight, curWeight = node->weight;
+	double pBQual = 1 - GTH::phredQuals[static_cast<int>( qual )];
+	do {
+		newWeight = curWeight + pBQual;
+	} while( !( node->weight.compare_exchange_weak( curWeight, newWeight ) ) );
+}
+
+void GTreefReads::updateWeightAndOccs( Node* node, char qual )
+{
+	node->occs++;
+	updateWeight(node, qual);
+}
+
 void GTreefReads::createRoot( short ind )
 {
 	int offset = -1;
@@ -44,7 +58,7 @@ void GTreefReads::createRoot( short ind )
 			qual = GTH::seqReads[i].getQual( offset );
 			root->readNum = i;
 			root->offset = offset;
-			root->weight = qual;
+			root->weight = 1 - GTH::phredQuals[static_cast<int>( qual )];
 			root->occs = 1;
 			break;
 		}
@@ -77,7 +91,7 @@ void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int
 	Node* tmpNode = node->subnodes[ind];
 	tmpNode->readNum = rN;
 	tmpNode->offset = offset;
-	tmpNode->weight = qual;
+	tmpNode->weight = 1 - GTH::phredQuals[static_cast<int>( qual )];
 	tmpNode->occs = 1;
 	for( int i = 0; i < NBASES; i++ )
 		tmpNode->subnodes[i] = nullptr;
@@ -116,7 +130,7 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 
 		if( clearBool ) {
 			for( int j = 0, k = offset; j < paths.size(); j++, k++ )
-				updateWeight( paths[j], ( *read ).getQual(k) );
+				updateWeightAndOccs( paths[j], ( *read ).getQual(k) );
 		}
 		node = node->subnodes[ind];
 		if( retBool ){
@@ -129,7 +143,6 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 
 bool GTreefReads::balanceNode( Node* node, bool mode )
 {
-	std::vector<Node*> paths;
 	// Get the offset and read before overiding/updating
 	int64_t lReadNum = node->readNum;
 	SeqRead* lRead = &GTH::seqReads[lReadNum];
@@ -157,6 +170,7 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 	node = node->subnodes[lInd];
 
 	// If the paths follow the same route:
+	std::vector<Node*> paths;
 	int64_t rReadNum = node->readNum;
 	SeqRead* rRead = &GTH::seqReads[rReadNum];
 	short rOffset = node->offset + 1;
@@ -165,25 +179,22 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 	lOffset++;
 	while( lOffset < ( *lRead ).size() && rOffset < (*rRead).size() ) {
 		lInd = ( *lRead ).getBaseInd( lOffset );
-		rInd = ( *rRead ).getBaseInd( rOffset );
 		lQual = ( *lRead ).getQual( lOffset );
+		rInd = ( *rRead ).getBaseInd( rOffset );
 		rQual = ( *rRead ).getQual( rOffset );
 
 		paths.push_back( node );
 
+		createNode( node, rInd, rQual, rReadNum, rOffset );
+
 		if(( *rRead ).getBaseInd( rOffset ) != ( *lRead ).getBaseInd( lOffset )) {
 			createNode( node, lInd, lQual, lReadNum, lOffset );
-			createNode( node, rInd, rQual, rReadNum, rOffset );
 
 			for( unsigned short j = 0, k = tmpOff; j < paths.size(); j++, k++ )
-				updateWeight( paths[j], ( *lRead ).getQual(k) );
+				updateWeightAndOccs( paths[j], ( *lRead ).getQual(k) );
 
 			return 1;
-		}
-
-		// Because we need to save the balance info of the same node regardless
-		// of which read is being processed
-		createNode( node, rInd, rQual, rReadNum, rOffset );
+		} 
 
 		node = node->subnodes[lInd];
 
@@ -191,15 +202,18 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 		rOffset++;
 	} 
 
+
 	// There will be imbalances caused by running out of read length
 	if( lOffset < ( *lRead ).size() ) {
 		lInd = ( *lRead ).getBaseInd( lOffset );
 		lQual = ( *lRead ).getQual( lOffset );
+		updateWeight(node, lQual);
 		createNode( node, lInd, lQual, lReadNum, lOffset );
 	} 
 	if( rOffset < ( *rRead ).size() ) {
-		rInd = ( *rRead ).getBaseInd(rOffset );
-		rQual = ( *rRead ).getQual(rOffset );
+		rInd = ( *rRead ).getBaseInd( rOffset );
+		rQual = ( *rRead ).getQual( rOffset );
+		updateWeight(node, rQual);
 		createNode( node, rInd, rQual, rReadNum, rOffset );
 	}
 

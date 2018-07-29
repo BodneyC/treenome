@@ -80,17 +80,6 @@ GTree<T>::GTree():
 
 /** ------------- - Helper Functions --------------- **/
 template <typename T>
-void GTree<T>::updateWeight( T* node, char qual )
-{
-	double newWeight, curWeight = node->weight;
-	double pBQual = GTH::phredQuals[static_cast<int>( qual )];
-	node->occs++;
-	do {
-		newWeight = curWeight + pBQual;
-	} while( !( node->weight.compare_exchange_weak( curWeight, newWeight ) ) );
-}
-
-template <typename T>
 short GTree<T>::countChildren( T* node )
 {
 	short children = 0;
@@ -106,14 +95,19 @@ template <typename T>
 signed short GTree<T>::mostOccs( T* node )
 {
 	short ind = -1;
-	int64_t occCnt = 0;
-	for( int i = 0; i < NBASES; i++ ) {
+	double maxRat = std::numeric_limits<double>::lowest();
+
+	for( short i = 0; i < NBASES; i++ ) {
 		T* tmpNode = node->subnodes[i];
-		if( tmpNode && tmpNode->occs > occCnt ) {
-			occCnt = tmpNode->occs;
-			ind = i;
+		if( tmpNode && tmpNode->occs ) {
+			double curRat = tmpNode->weight / static_cast<double>(tmpNode->occs);
+			if( curRat > maxRat ) {
+				maxRat = curRat;
+				ind = i;
+			}
 		}
 	}
+
 	return ind;
 }
 
@@ -126,6 +120,8 @@ void GTree<T>::followPath( T* node, short ind, std::string &sequence )
 		sequence += GTH::retLabel( ind );
 		ind = mostOccs( node );
 		node->occs--;
+		double tmpD = node->weight - 1;
+		node->weight = tmpD;
 		if( ind == -1 )
 			return;
 		node = node->subnodes[ind];
@@ -139,19 +135,19 @@ void GTree<T>::addToSeq( uint64_t offset, std::string &sequence )
 	T* node = root;
 	short ind = 0;
 	uint32_t i, j, seqLength = sequence.length() - offset;
-	T** path = new T*[seqLength];
+	T** nPath = new T*[seqLength];
 
 	for( i = 0; i < seqLength; i++ )
-		path[i] = nullptr;
+		nPath[i] = nullptr;
 
 	// End of current sequence	
 	for( i = offset + 1, j = 0; i < sequence.length(); i++, j++ ) {
 		ind = BASE_IND( sequence[i] );
 		if( node->subnodes[ind] && countChildren( node->subnodes[ind] ) ) {
-			path[j] = node;
+			nPath[j] = node;
 			node = node->subnodes[ind];
 		} else {
-			delete[] path;
+			delete[] nPath;
 			return;
 		}
 	}
@@ -163,11 +159,14 @@ void GTree<T>::addToSeq( uint64_t offset, std::string &sequence )
 		// Only if something is contributed to the sequence should the 
 		// occurences be lowered
 		for( i = 0; i < seqLength; i++ )
-			if( path[i] ) 
-				path[i]->occs--;
+			if( nPath[i] ) {
+				nPath[i]->occs--;
+				double tmpD = nPath[i]->weight - 1;
+				nPath[i]->weight = tmpD;
+			}
 	}
 
-	delete[] path;
+	delete[] nPath;
 }
 
 /** ---------------- Tree Storage ------------------ **/
@@ -223,6 +222,7 @@ void GTree<T>::printAllPaths( T* node, int len, short label )
 	for( int i = 0; i < NBASES; i++ )
 		if( node->subnodes[i] )
 			check = true;
+	std::cout << "\nWEIGHT: " << node->weight << '\n';
     if( !check ) {
 		occuPaths.erase( occuPaths.length() - 1 );
 		std::cout << occuPaths << ": EOS" << std::endl;

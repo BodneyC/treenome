@@ -34,6 +34,15 @@ struct CMDArgs {
 		phredBase( 33 ) {  }
 };
 
+signed int inFileCheck( std::string filename )
+{
+	std::ifstream testFile( filename );
+	if( testFile.good() )
+		return 0;
+	else
+		return IN_FILE_ERROR;
+}
+
 signed int returnArgs( int argc, char** argv, struct CMDArgs& argList ) {
 	try {
 		TCLAP::CmdLine cmd( "Tree based de novo DNA assembler", ' ', "1.04" );
@@ -106,6 +115,7 @@ signed int createTreeFromReads( struct CMDArgs& argList )
 		treeTop.storeTrees();
 		writeTreesToDisk( argList.sFilename, treeTop );
 	}
+
 	treeTop.buildSequence();
 	treeTop.printSequence();
 
@@ -120,15 +130,6 @@ signed int loadTreeFromFile( struct CMDArgs& argList )
 		treeTop.printTrees();
 
 	return 0;
-}
-
-signed int inFileCheck( std::string filename )
-{
-	std::ifstream testFile( filename );
-	if( testFile.good() )
-		return 0;
-	else
-		return IN_FILE_ERROR;
 }
 
 int main( int argc, char** argv )

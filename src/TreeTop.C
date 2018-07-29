@@ -12,12 +12,6 @@
  *******************************************************************/
 #include "../includes/TreeTop.H"
 
-template <class T>
-TreeTop<T>::TreeTop(): 
-	sequence( "" ), nReads( 0 ), readLength( 0 )
-{
-}
-
 /** ------------- Sequence Generation -------------- **/
 template <class T>
 bool TreeTop<T>::rootOccsExist()
@@ -35,14 +29,15 @@ template <class T>
 short TreeTop<T>::maxPath()
 {
 	int start = 0;
-	int64_t maxOccs = 0;
-	int64_t curOccs;
+	double maxRat = std::numeric_limits<double>::lowest();
 
 	for( short i = 0; i < NBASES; i++ ) {
-		curOccs = trees[i].getRoot()->occs;
-		if( curOccs > maxOccs ) {
-			maxOccs = curOccs;
-			start = i;
+		if( trees[i].getRoot()->occs ) {
+			double curRat = trees[i].getRoot()->weight / static_cast<double>(trees[i].getRoot()->occs);
+			if( curRat > maxRat ) {
+				maxRat = curRat;
+				start = i;
+			}
 		}
 	}
 
