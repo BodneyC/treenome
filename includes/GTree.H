@@ -90,6 +90,7 @@ private:
 	////TMP
 	std::mutex gtMut;
 
+	void potAddNode( Node* node );
 	void updateWeight( Node* node, char qual );
 	void updateWeightAndOccs( Node* node, char qual );
 };
