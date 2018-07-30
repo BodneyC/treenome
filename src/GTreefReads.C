@@ -161,6 +161,7 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 	int64_t lReadNum = node->readNum;
 	SeqRead* lRead = &GTH::seqReads[lReadNum];
 	short lOffset = node->offset + 1;
+	bool clearBool = 0;
 
 	// If there is nothing to balance with:
 	// (will obviously cause imbalanced weights/occs)
@@ -191,49 +192,46 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 
 	std::vector<short> lIndPath;
 	std::vector<short> rIndPath;
-	std::vector<short> tmpLOffset( 2, lOffset );
-	std::vector<short> tmpROffset( 2, rOffset );
-	//std::cout << "TMPL[0]: " << tmpLOffset[0] << ", TMPL[1]: " << tmpLOffset[1] << std::endl;
+	short tmpLOffset = lOffset, tmpROffset = rOffset;
+	//std::cout << "TMPL: " << tmpLOffset << ", TMPL[1]: " << tmpLOffset << std::endl;
 
 	while( lOffset < ( *lRead ).size() && rOffset < ( *rRead ).size() ) {
 		lIndPath.push_back( ( *lRead ).getBaseInd( lOffset ) );
 		rIndPath.push_back( ( *rRead ).getBaseInd( rOffset ) );
 
 		if(( *rRead ).getBaseInd( rOffset ) != ( *lRead ).getBaseInd( lOffset )) {
-			for( unsigned short i = 0; i < lIndPath.size() - 1; i++ ) {
-				createNode( node, lIndPath[i], ( *lRead ).getQual( tmpLOffset[0] ), lReadNum, tmpLOffset[0] );
-				node = node->subnodes[lIndPath[i]];
-				updateWeightAndOccs( node, ( *rRead ).getQual( tmpROffset[0] ) );
-				tmpLOffset[0]++;
-				tmpROffset[0]++;
-			}
-			createNode( node, lIndPath.back(), ( *lRead ).getQual( tmpLOffset[0] ), lReadNum, tmpLOffset[0] );
-			createNode( node, rIndPath.back(), ( *rRead ).getQual( tmpROffset[0] ), rReadNum, tmpROffset[0] );
-			return 1;
+			clearBool = 1;
+			break;
 		}
 
 		lOffset++;
 		rOffset++;
 	} 
 
-	for( unsigned short i = 0; i < lIndPath.size(); i++ ) {
-		createNode( node, lIndPath[i], ( *lRead ).getQual( tmpLOffset[1] ), lReadNum, tmpLOffset[1] );
+	for( unsigned short i = 0; i < lIndPath.size() - clearBool; i++ ) {
+		createNode( node, lIndPath[i], ( *lRead ).getQual( tmpLOffset ), lReadNum, tmpLOffset );
 		node = node->subnodes[lIndPath[i]];
-		updateWeightAndOccs( node, ( *rRead ).getQual( tmpROffset[1] ) );
-		tmpLOffset[1]++;
-		tmpROffset[1]++;
+		updateWeightAndOccs( node, ( *rRead ).getQual( tmpROffset ) );
+		tmpLOffset++;
+		tmpROffset++;
+	}
+
+	if( clearBool ) {
+			createNode( node, lIndPath.back(), ( *lRead ).getQual( tmpLOffset ), lReadNum, tmpLOffset );
+			createNode( node, rIndPath.back(), ( *rRead ).getQual( tmpROffset ), rReadNum, tmpROffset );
+			return 1;
 	}
 
 	if( lOffset < ( *lRead ).size() ) {
-		lInd = ( *lRead ).getBaseInd( tmpLOffset[1] );
-		lQual = ( *lRead ).getQual( tmpLOffset[1] );
-		createNode( node, lInd, lQual, lReadNum, tmpLOffset[1] );
-		//std::cout << "lRN: " << lReadNum << ", lOff: " << tmpLOffset[1] << std::endl;
+		lInd = ( *lRead ).getBaseInd( tmpLOffset );
+		lQual = ( *lRead ).getQual( tmpLOffset );
+		createNode( node, lInd, lQual, lReadNum, tmpLOffset );
+		//std::cout << "lRN: " << lReadNum << ", lOff: " << tmpLOffset << std::endl;
 	} 
 	if( rOffset < ( *rRead ).size() ) {
-		short rInd = ( *rRead ).getBaseInd( tmpROffset[1] );
-		char rQual = ( *rRead ).getQual(tmpROffset[1] );
-		createNode( node, rInd, rQual, rReadNum, tmpROffset[1] );
+		short rInd = ( *rRead ).getBaseInd( tmpROffset );
+		char rQual = ( *rRead ).getQual(tmpROffset );
+		createNode( node, rInd, rQual, rReadNum, tmpROffset );
 		//std::cout << "rRN: " << rReadNum << ", rOff: " << tmpROffset[1] << std::endl;
 	}
 
