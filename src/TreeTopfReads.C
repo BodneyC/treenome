@@ -24,13 +24,20 @@ TreeTopfReads::TreeTopfReads()
 /** --------------- Read Processing ---------------- **/
 void TreeTopfReads::threadFunc( uint64_t i )
 {
-	for( short j = 0; j < GTH::seqReads[i].size(); j++ )
-		//if( GTH::seqReads[i].getBaseInd( j ) == 3 )
+	for( short j = 0; j < GTH::seqReads[i].size(); j++ ) {
+		//if( GTH::seqReads[i].getBaseInd( j ) == 2 )
 			trees[GTH::seqReads[i].getBaseInd( j )].addReadOne( i, j );
+	}
 }
 
 void TreeTopfReads::processReadsOne()
 {
+	//for( uint64_t i = 0; i < GTH::seqReads.size(); i++ ) {
+	//	for( short j = 0; j < GTH::seqReads[i].size(); j++ ) {
+	//		std::cout << "RN: " << i << ", IND: " << j << ", QUAL: " << static_cast<int>(GTH::seqReads[i].getQual( j )) << std::endl;
+	//	}
+	//}
+
 #pragma omp parallel num_threads( NUM_THREADS )
 {
 	for( uint64_t i = 0; i < GTH::seqReads.size(); i += NUM_THREADS ) {

@@ -25,7 +25,7 @@ GTreefReads::GTreefReads(): nodesCnt( 0 )
 /** ---------------- Tree Creation ----------------- **/
 void GTreefReads::updateWeight( Node* node, char qual ) {
 	double newWeight, curWeight = node->weight;
-	double pBQual = 1 - GTH::phredQuals[static_cast<int>( qual )];
+	double pBQual = GTH::phredQuals[static_cast<int>( qual )];
 	do {
 		newWeight = curWeight + pBQual;
 	} while( !( node->weight.compare_exchange_weak( curWeight, newWeight ) ) );
@@ -58,18 +58,18 @@ void GTreefReads::createRoot( short ind )
 			qual = GTH::seqReads[i].getQual( offset );
 			root->readNum = i;
 			root->offset = offset;
-			root->weight = 1 - GTH::phredQuals[static_cast<int>( qual )];
+			root->weight = GTH::phredQuals[static_cast<int>( qual )];
 			root->occs = 1;
 			break;
 		}
 	}
 	// Create second for balancing purposes
-	offset++;
-	if( offset && offset != GTH::seqReads[i].size() ) {
-		ind = GTH::seqReads[i].getBaseInd( offset );
-		qual = GTH::seqReads[i].getQual( offset );
-		createNode( root, ind, qual, i, offset );
-	}
+	//offset++;
+	//if( offset && offset != GTH::seqReads[i].size() ) {
+	//	ind = GTH::seqReads[i].getBaseInd( offset );
+	//	qual = GTH::seqReads[i].getQual( offset );
+	//	createNode( root, ind, qual, i, offset );
+	//}
 }
 
 void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int offset )
@@ -83,7 +83,6 @@ void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int
 		head = 0;
 	}
 	node->subnodes[ind] = &( nodes[nodesCnt][head] );
-	omp_unset_lock( &lock );
 
 	nNodes++;
 
@@ -91,10 +90,11 @@ void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int
 	Node* tmpNode = node->subnodes[ind];
 	tmpNode->readNum = rN;
 	tmpNode->offset = offset;
-	tmpNode->weight = 1 - GTH::phredQuals[static_cast<int>( qual )];
+	tmpNode->weight = GTH::phredQuals[static_cast<int>( qual )];
 	tmpNode->occs = 1;
 	for( int i = 0; i < NBASES; i++ )
 		tmpNode->subnodes[i] = nullptr;
+	omp_unset_lock( &lock );
 }
 
 /** --------------- Read Processing ---------------- **/
@@ -106,8 +106,9 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 	SeqRead* read = &GTH::seqReads[readNum];
 	bool retBool = 0, clearBool = 0;
 
-	if( root->offset == offset && root->readNum == readNum )
+	if( root->offset == offset && root->readNum == readNum ) {
 		return;
+	}
 
 	for( int i = offset + 1; i < GTH::seqReads[readNum].size(); i++ ) {
 		short ind = ( *read ).getBaseInd( i );
@@ -115,10 +116,11 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 
 		omp_set_lock( &node->lock );
 		if( !node->subnodes[ind] ) {
-			createNode( node, ind, (*read).getQual(i), readNum, i );
+			//std::cout << ( *read ).getQual( i ) << std::endl;
+			createNode( node, ind, ( *read ).getQual( i ), readNum, i );
 			retBool = clearBool = 1;
-			if( countChildren(node) == 1 ) {
-				clearBool = balanceNode( node, 1 );
+			if( countChildren( node ) == 1 ) {
+				balanceNode( node, 1 );
 			}
 		}
 		if( i + 1 == GTH::seqReads[readNum].size() &&
@@ -126,18 +128,18 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 				!countChildren( node->subnodes[ind]) ) {
 			balanceNode( node->subnodes[ind], 0 );
 		}
-		omp_unset_lock( &node->lock );
 
 		if( clearBool ) {
 			for( int j = 0, k = offset; j < paths.size(); j++, k++ )
 				updateWeightAndOccs( paths[j], ( *read ).getQual(k) );
 		}
-		node = node->subnodes[ind];
+		omp_unset_lock( &node->lock );
 		if( retBool ){
 			paths.clear();
 			// If EOS is reached, occurrences should be increased
 			break;
 		}
+		node = node->subnodes[ind];
 	}
 }
 
@@ -170,14 +172,22 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 	node = node->subnodes[lInd];
 
 	// If the paths follow the same route:
-	std::vector<Node*> paths;
 	int64_t rReadNum = node->readNum;
 	SeqRead* rRead = &GTH::seqReads[rReadNum];
 	short rOffset = node->offset + 1;
 	short rInd = 0;
 	char rQual;
 	lOffset++;
-	while( lOffset < ( *lRead ).size() && rOffset < (*rRead).size() ) {
+
+	std::vector<Node*> paths;
+	std::vector<short> indPath;
+	std::vector<int64_t> rnPath;
+	short tmpLOffset = lOffset, tmpROffset = rOffset;
+	//std::string tmpLString = "", tmpRString = "";
+	//for( ; tmpLOffset < ( *lRead ).size(); tmpLOffset++)
+	//	tmpLString += ( *lRead ).getCharBase( tmpLOffset );
+
+	while( lOffset < ( *lRead ).size() && rOffset < ( *rRead ).size() ) {
 		lInd = ( *lRead ).getBaseInd( lOffset );
 		lQual = ( *lRead ).getQual( lOffset );
 		rInd = ( *rRead ).getBaseInd( rOffset );
@@ -185,16 +195,27 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 
 		paths.push_back( node );
 
-		createNode( node, rInd, rQual, rReadNum, rOffset );
 
 		if(( *rRead ).getBaseInd( rOffset ) != ( *lRead ).getBaseInd( lOffset )) {
 			createNode( node, lInd, lQual, lReadNum, lOffset );
+			createNode( node, rInd, rQual, rReadNum, rOffset );
 
 			for( unsigned short j = 0, k = tmpOff; j < paths.size(); j++, k++ )
-				updateWeightAndOccs( paths[j], ( *lRead ).getQual(k) );
+				updateWeightAndOccs( paths[j], ( *lRead ).getQual( k ) );
 
 			return 1;
-		} 
+		}
+
+		bool side = 0;
+		if( rReadNum < lReadNum || ( rReadNum == lReadNum && rOffset < lOffset ))
+			side = 1;
+		if( side ) {
+			createNode( node, lInd, lQual, lReadNum, lOffset );
+			//updateWeightAndOccs(node->subnodes[rInd], rQual);
+		} else {
+			createNode( node, rInd, rQual, rReadNum, rOffset );
+			//updateWeightAndOccs(node->subnodes[lInd], lQual);
+		}
 
 		node = node->subnodes[lInd];
 
@@ -205,15 +226,15 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 
 	// There will be imbalances caused by running out of read length
 	if( lOffset < ( *lRead ).size() ) {
+		//updateWeight(node, lQual);
 		lInd = ( *lRead ).getBaseInd( lOffset );
 		lQual = ( *lRead ).getQual( lOffset );
-		updateWeight(node, lQual);
 		createNode( node, lInd, lQual, lReadNum, lOffset );
 	} 
 	if( rOffset < ( *rRead ).size() ) {
+		//updateWeight(node, rQual);
 		rInd = ( *rRead ).getBaseInd( rOffset );
 		rQual = ( *rRead ).getQual( rOffset );
-		updateWeight(node, rQual);
 		createNode( node, rInd, rQual, rReadNum, rOffset );
 	}
 

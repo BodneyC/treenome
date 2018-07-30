@@ -51,7 +51,7 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList ) {
 				"Input file which was previously outputted from TreeNome", false, "", "string" );
 		TCLAP::ValueArg<std::string> sFileArg( "s", "storefile", 
 				"File in which to store the tree data", false, "", "string" );
-		TCLAP::ValueArg<int> thrArg( "t", "threads", "Number of threads to use", false, /*1*/ 4, "int" );
+		TCLAP::ValueArg<int> thrArg( "t", "threads", "Number of threads to use", false, /*1*/ 8, "int" );
 		std::vector<int> pAllowed = { 33, 64 };
 		TCLAP::ValuesConstraint<int> pAllowedVC( pAllowed );
 		TCLAP::ValueArg<int> phredArg( "", "phred", 
@@ -116,8 +116,8 @@ signed int createTreeFromReads( struct CMDArgs& argList )
 		writeTreesToDisk( argList.sFilename, treeTop );
 	}
 
-	treeTop.buildSequence();
-	treeTop.printSequence();
+	//treeTop.buildSequence();
+	//treeTop.printSequence();
 
 	return 0;
 }
@@ -153,6 +153,8 @@ int main( int argc, char** argv )
 	}
 
 	omp_set_num_threads( NUM_THREADS );
+
+	std::cout << NUM_THREADS << std::endl;
 
 	if( argList.loadFile ) {
 		progFail = loadTreeFromFile( argList );
