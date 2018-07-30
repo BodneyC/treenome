@@ -221,10 +221,10 @@ void GTree<T>::printAllPaths( T* node, int len, short label )
 	for( int i = 0; i < NBASES; i++ )
 		if( node->subnodes[i] )
 			check = true;
-	std::cout << "\nWEIGHT: " << node->weight << '\n';
+	std::cout << "WEIGHT: " << node->weight << '\n';
     if( !check ) {
 		occuPaths.erase( occuPaths.length() - 1 );
-		//std::cout << occuPaths << ": EOS" << std::endl;
+		std::cout << occuPaths << ": EOS" << std::endl;
 		basePaths.erase( basePaths.length() - 1 );
 		std::cout << basePaths << ": EOS\n" << std::endl;
         return;

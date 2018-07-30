@@ -100,7 +100,7 @@ void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int
 /** --------------- Read Processing ---------------- **/
 void GTreefReads::addReadOne( uint64_t readNum, short offset ) 
 {
-	//std::lock_guard<std::mutex> cncn(gtMut);
+	std::lock_guard<std::mutex> cncn(gtMut);
 	std::vector<Node*> paths;
 
 	Node* node = root;
@@ -111,8 +111,12 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 		return;
 	}
 
+	////TMP
+	//std::string tmpString = "";
+
 	for( int i = offset + 1; i < GTH::seqReads[readNum].size(); i++ ) {
 		short ind = ( *read ).getBaseInd( i );
+		//tmpString += ( *read ).getCharBase( i );
 		paths.push_back( node );
 
 		omp_set_lock( &node->lock );
@@ -124,11 +128,13 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 				balanceNode( node, 1 );
 			}
 		}
-		//if( i + 1 == GTH::seqReads[readNum].size() &&
-		//		node->subnodes[ind] &&
-		//		!countChildren( node->subnodes[ind]) ) {
-		//	balanceNode( node->subnodes[ind], 0 );
-		//}
+		if( i + 1 == GTH::seqReads[readNum].size() &&
+				node->subnodes[ind] &&
+				!countChildren( node->subnodes[ind]) ) {
+			std::cout << "IN HERE" << std::endl;
+			balanceNode( node->subnodes[ind], 0 );
+			clearBool = 0;
+		}
 		omp_unset_lock( &node->lock );
 
 		if( clearBool ) {
@@ -137,7 +143,8 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 		}
 		if( retBool ){
 			//std::cout << "THR: " << omp_get_thread_num() << std::endl;
-			//printAllPaths(1);
+			//<< tmpString << std::endl;;
+
 			paths.clear();
 			// If EOS is reached, occurrences should be increased
 			break;
@@ -184,8 +191,9 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 
 	std::vector<short> lIndPath;
 	std::vector<short> rIndPath;
-	short tmpLOffset = lOffset, tmpROffset = rOffset;
-	short tmpLOffset2 = lOffset, tmpROffset2 = rOffset;
+	std::vector<short> tmpLOffset( 2, lOffset );
+	std::vector<short> tmpROffset( 2, rOffset );
+	//std::cout << "TMPL[0]: " << tmpLOffset[0] << ", TMPL[1]: " << tmpLOffset[1] << std::endl;
 
 	while( lOffset < ( *lRead ).size() && rOffset < ( *rRead ).size() ) {
 		lIndPath.push_back( ( *lRead ).getBaseInd( lOffset ) );
@@ -193,14 +201,14 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 
 		if(( *rRead ).getBaseInd( rOffset ) != ( *lRead ).getBaseInd( lOffset )) {
 			for( unsigned short i = 0; i < lIndPath.size() - 1; i++ ) {
-				createNode( node, lIndPath[i], ( *lRead ).getQual( tmpLOffset ), lReadNum, tmpLOffset );
+				createNode( node, lIndPath[i], ( *lRead ).getQual( tmpLOffset[0] ), lReadNum, tmpLOffset[0] );
 				node = node->subnodes[lIndPath[i]];
-				updateWeightAndOccs( node, ( *rRead ).getQual( tmpROffset ) );
-				tmpLOffset++;
-				tmpROffset++;
+				updateWeightAndOccs( node, ( *rRead ).getQual( tmpROffset[0] ) );
+				tmpLOffset[0]++;
+				tmpROffset[0]++;
 			}
-			createNode( node, lIndPath.back(), ( *lRead ).getQual( tmpLOffset ), lReadNum, tmpLOffset );
-			createNode( node, rIndPath.back(), ( *rRead ).getQual( tmpROffset ), rReadNum, tmpROffset );
+			createNode( node, lIndPath.back(), ( *lRead ).getQual( tmpLOffset[0] ), lReadNum, tmpLOffset[0] );
+			createNode( node, rIndPath.back(), ( *rRead ).getQual( tmpROffset[0] ), rReadNum, tmpROffset[0] );
 			return 1;
 		}
 
@@ -208,15 +216,25 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 		rOffset++;
 	} 
 
+	for( unsigned short i = 0; i < lIndPath.size(); i++ ) {
+		createNode( node, lIndPath[i], ( *lRead ).getQual( tmpLOffset[1] ), lReadNum, tmpLOffset[1] );
+		node = node->subnodes[lIndPath[i]];
+		updateWeightAndOccs( node, ( *rRead ).getQual( tmpROffset[1] ) );
+		tmpLOffset[1]++;
+		tmpROffset[1]++;
+	}
+
 	if( lOffset < ( *lRead ).size() ) {
-		lInd = ( *lRead ).getBaseInd( tmpLOffset2 );
-		lQual = ( *lRead ).getQual( tmpLOffset2 );
-		createNode( node, lInd, lQual, lReadNum, tmpLOffset2 );
+		lInd = ( *lRead ).getBaseInd( tmpLOffset[1] );
+		lQual = ( *lRead ).getQual( tmpLOffset[1] );
+		createNode( node, lInd, lQual, lReadNum, tmpLOffset[1] );
+		//std::cout << "lRN: " << lReadNum << ", lOff: " << tmpLOffset[1] << std::endl;
 	} 
 	if( rOffset < ( *rRead ).size() ) {
-		short rInd = ( *rRead ).getBaseInd( tmpROffset2 );
-		char rQual = ( *rRead ).getQual(tmpROffset2 );
-		createNode( node, rInd, rQual, rReadNum, tmpROffset2 );
+		short rInd = ( *rRead ).getBaseInd( tmpROffset[1] );
+		char rQual = ( *rRead ).getQual(tmpROffset[1] );
+		createNode( node, rInd, rQual, rReadNum, tmpROffset[1] );
+		//std::cout << "rRN: " << rReadNum << ", rOff: " << tmpROffset[1] << std::endl;
 	}
 
 	return 0;
