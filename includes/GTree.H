@@ -14,6 +14,9 @@
 #ifndef _GTREE_
 #define _GTREE_
 
+////TMP
+#include <mutex>
+
 #include <iostream>
 #include <string>
 #include <sstream>
@@ -61,7 +64,6 @@ protected:
 	T* root;
 	std::atomic<uint64_t> head, nNodes;
 	std::string basePaths, occuPaths, treeString;
-	omp_lock_t lock;
 
 	/* Helpers requiring templates */
 	signed short mostOccs( T* node );
@@ -84,6 +86,9 @@ private:
 	std::vector< std::vector< Node > > nodes;
 	void createNode( Node* node, short label, char qual, uint64_t rN, int offset );
 	std::atomic<uint64_t> nodesCnt;
+	omp_lock_t lock;
+	////TMP
+	std::mutex gtMut;
 
 	void updateWeight( Node* node, char qual );
 	void updateWeightAndOccs( Node* node, char qual );

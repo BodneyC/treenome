@@ -75,7 +75,6 @@ GTree<T>::GTree():
 	root( nullptr ), head( 0 ), nNodes( 0 ), 
 	basePaths( "" ), occuPaths( "" ), treeString( "" )
 { 
-	omp_init_lock( &lock );
 }
 
 /** ------------- - Helper Functions --------------- **/
