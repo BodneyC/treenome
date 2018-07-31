@@ -18,7 +18,6 @@
 #endif /*c++11 check*/
 
 #define NBASES 4
-#define RES 500
 
 #include <atomic>
 #include <omp.h>

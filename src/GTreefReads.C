@@ -13,14 +13,12 @@
  *******************************************************************/
 #include "../includes/GTree.H"
 
-GTreefReads::GTreefReads(): nodesCnt( 0 ) {
+GTreefReads::GTreefReads() {
 	// Because reallocation of std::vectors is assured if its class is a 
 	// std::vector, a vector of vectors has been used with a 1-by-1 
 	// .push_back()
-	nodes.resize( 1 );
-	nodes[nodesCnt].resize( RES );
-
 	omp_init_lock( &lock );
+	nodes.resize( RES );
 }
 /** ---------------- Tree Creation ----------------- **/
 void GTreefReads::updateWeight( Node* node, char qual ) {
@@ -41,8 +39,8 @@ void GTreefReads::createRoot( short ind )
 {
 	uint32_t i;
 	char qual;
-	root = &( nodes[nodesCnt][head] );
-	//nNodes++;
+	root = &( nodes[head] );
+	nNodes++;
 
 	for( i = 0; i < GTH::seqReads.size(); i++ ) {
 		int offset = -1;
@@ -68,15 +66,13 @@ void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int
 {
 	omp_set_lock( &lock );
 	head++;
-	if( head == RES ) {
-		std::vector<Node> tmpVec( RES );
-		nodes.push_back( tmpVec );
-		nodesCnt++;
-		head = 0;
+	if( head == nodes.size() ) {
+		std::cout << nodes.size() << std::endl;
+		nodes.resize( nodes.size() + RES );
 	}
-	node->subnodes[ind] = &( nodes[nodesCnt][head] );
-	nNodes++;
+	node->subnodes[ind] = &( nodes[head] );
 	omp_unset_lock( &lock );
+	nNodes++;
 
 	// Doesn't set occs as addRead...() will do that
 	Node* tmpNode = node->subnodes[ind];

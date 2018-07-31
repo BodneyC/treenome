@@ -21,10 +21,13 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <deque>
 #include <limits>
 #include "SeqRead.H"
 #include "Node.H"
 #include "Phred33.H"
+
+#define RES 500
 
 // GTree Helpers
 namespace GTH {
@@ -84,12 +87,10 @@ public:
 	void addReadOne( uint64_t readNum, short offset ); 
 	void balanceNode( Node* node );
 private:
-	std::vector< std::vector< Node > > nodes;
-	void createNode( Node* node, short label, char qual, uint64_t rN, int offset );
-	std::atomic<int64_t> nodesCnt;
 	omp_lock_t lock;
-	////TMP
-	std::mutex gtMut;
+	std::deque< Node > nodes;
+	void createNode( Node* node, short label, char qual, uint64_t rN, int offset );
+	//std::mutex gtMut;
 
 	void potAddNode( Node* node );
 	void updateWeight( Node* node, char qual );
