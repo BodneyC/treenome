@@ -46,7 +46,7 @@ void GTreefReads::createRoot( short ind )
 
 	for( i = 0; i < GTH::seqReads.size(); i++ ) {
 		int offset = -1;
-		// Find algorithm
+		// Find algorithm in bool vec
 		for( int j = 0; j < GTH::seqReads[i].size(); j++ ) {
 			if( GTH::seqReads[i].getBaseInd(j) == ind ) {
 				offset = j;
@@ -62,13 +62,6 @@ void GTreefReads::createRoot( short ind )
 			break;
 		}
 	}
-	// Create second for balancing purposes
-	//offset++;
-	//if( offset && offset != GTH::seqReads[i].size() ) {
-	//	ind = GTH::seqReads[i].getBaseInd( offset );
-	//	qual = GTH::seqReads[i].getQual( offset );
-	//	createNode( root, ind, qual, i, offset );
-	//}
 }
 
 void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int offset )
@@ -106,18 +99,11 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 	SeqRead* read = &GTH::seqReads[readNum];
 	bool returnBool = 0, updateBool = 0;
 
-	if( root->offset == offset && ( uint64_t )root->readNum == readNum ) {
+	if( root->offset == offset && ( uint64_t )root->readNum == readNum )
 		return;
-	}
-
-	////TMP
-	//std::string tmpString = "";
-	if(!readNum)
-		std::cout << GTH::seqReads[readNum].size() << std::endl;
 
 	for( int i = offset + 1; i < GTH::seqReads[readNum].size(); i++ ) {
 		short ind = ( *read ).getBaseInd( i );
-		//tmpString += ( *read ).getCharBase( i );
 		paths.push_back( node );
 
 		omp_set_lock( &node->lock );
@@ -125,38 +111,32 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 			//std::cout << ( *read ).getQual( i ) << std::endl;
 			createNode( node, ind, ( *read ).getQual( i ), readNum, i );
 			returnBool = updateBool = 1;
-			if( countChildren( node ) == 1 ) {
+			if( countChildren( node ) == 1 )
 				// Even if it doesn't balance it, a node was created and so
 				// the path needs updating
-				balanceNode( node, 1 );
-			}
+				balanceNode( node );
 		}
 		if( i + 1 == GTH::seqReads[readNum].size() ) {
-			// If the end it reach, they still count as occurrences of the path...
+			// If the end is reached, they still count as occurrences of the path...
 			updateBool = 1;
-			if( node->subnodes[ind] && !countChildren( node->subnodes[ind]) ) {
-				//std::cout << "IN HERE" << std::endl;
+			// If a subnode exists and it wasn't created above
+			if( node->subnodes[ind] && !returnBool)
+				paths.push_back( node->subnodes[ind] );
+			// For balancing purposes
+			if( node->subnodes[ind] && !countChildren( node->subnodes[ind]) )
 				potAddNode( node->subnodes[ind] );
-			}
 		}
 		omp_unset_lock( &node->lock );
 
 		// It will always enter updateBool, just needs to know when
-		if( updateBool ) {
+		if( updateBool )
 			for( unsigned int j = 0, k = offset; j < paths.size(); j++, k++ )
 				updateWeightAndOccs( paths[j], ( *read ).getQual(k) );
-		}
-		if( returnBool ){
-			//std::cout << "THR: " << omp_get_thread_num() << std::endl;
-			//<< tmpString << std::endl;;
-
-			// If EOS is reached, occurrences should be increased
+		if( returnBool )
 			break;
-		}
 
 		node = node->subnodes[ind];
 	}
-	//std::cout << updateBool << std::endl;
 	paths.clear();
 }
 
@@ -175,7 +155,7 @@ void GTreefReads::potAddNode(Node* node)
 	createNode( node, ind, qual, rN, offset );
 }
 
-bool GTreefReads::balanceNode( Node* node, bool mode )
+void GTreefReads::balanceNode( Node* node )
 {
 	// Get the offset and read before overiding/updating
 	int64_t lReadNum = node->readNum;
@@ -185,8 +165,8 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 
 	// If there is nothing to balance with:
 	// (will obviously cause imbalanced weights/occs)
-	if( lOffset == ( *lRead ).size() ) 
-		return mode;
+	if( lOffset == ( *lRead ).size() )
+		return;
 
 	short lInd = ( *lRead ).getBaseInd( lOffset );
 	char lQual = ( *lRead ).getQual( lOffset );
@@ -194,12 +174,12 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 	if(node->subnodes[lInd] && 
 			lOffset == node->subnodes[lInd]->offset && 
 			lReadNum == node->subnodes[lInd]->readNum)
-		return 0;
+		return;
 
 	// If the paths are different:
 	if( !node->subnodes[lInd] ) {
 		createNode( node, lInd, lQual, lReadNum, lOffset );
-		return mode;
+		return;
 	}
 	node = node->subnodes[lInd];
 	updateWeightAndOccs(node, lQual);
@@ -213,7 +193,6 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 	std::vector<short> lIndPath;
 	std::vector<short> rIndPath;
 	short tmpLOffset = lOffset, tmpROffset = rOffset;
-	//std::cout << "TMPL: " << tmpLOffset << ", TMPL[1]: " << tmpLOffset << std::endl;
 
 	while( lOffset < ( *lRead ).size() && rOffset < ( *rRead ).size() ) {
 		lIndPath.push_back( ( *lRead ).getBaseInd( lOffset ) );
@@ -239,7 +218,7 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 	if( clearBool ) {
 		createNode( node, lIndPath.back(), ( *lRead ).getQual( tmpLOffset ), lReadNum, tmpLOffset );
 		createNode( node, rIndPath.back(), ( *rRead ).getQual( tmpROffset ), rReadNum, tmpROffset );
-		return mode;
+		return;
 	}
 
 	// If one ends, create the relevant node
@@ -247,14 +226,12 @@ bool GTreefReads::balanceNode( Node* node, bool mode )
 		lInd = ( *lRead ).getBaseInd( tmpLOffset );
 		lQual = ( *lRead ).getQual( tmpLOffset );
 		createNode( node, lInd, lQual, lReadNum, tmpLOffset );
-		//std::cout << "lRN: " << lReadNum << ", lOff: " << tmpLOffset << std::endl;
 	} 
 	if( rOffset < ( *rRead ).size() ) {
 		short rInd = ( *rRead ).getBaseInd( tmpROffset );
 		char rQual = ( *rRead ).getQual(tmpROffset );
 		createNode( node, rInd, rQual, rReadNum, tmpROffset );
-		//std::cout << "rRN: " << rReadNum << ", rOff: " << tmpROffset[1] << std::endl;
 	}
 
-	return 0;
+	return;
 }

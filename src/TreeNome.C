@@ -7,13 +7,15 @@
  *		   Secondary - Dr. Ben Mora
  *
  * Organisation: Swansea University
- * Copyright (xcx ) 2018, Benjamin Carrington, all rights reserved
+ * Copyright (c) 2018, Benjamin Carrington, all rights reserved
  *
  *******************************************************************/
 /* TODO:
- * - Double accuracy?
- * - Reconstruct tree from file ( possible second program )
- * - Quality vs. occurrences in sequence creation
+ * - Adjust print sequence
+ * - Quality vs. Occurrences threshold
+ * - Double accuracy in summation (negligible)
+ * - Reconstructed tree analyses
+ * - Timing and memory recording
  */
 #include "../includes/tclap/CmdLine.h"
 #include "../includes/InputFile.H"
@@ -43,7 +45,8 @@ signed int inFileCheck( std::string filename )
 		return IN_FILE_ERROR;
 }
 
-signed int returnArgs( int argc, char** argv, struct CMDArgs& argList ) {
+signed int returnArgs( int argc, char** argv, struct CMDArgs& argList ) 
+{
 	try {
 		TCLAP::CmdLine cmd( "Tree based de novo DNA assembler", ' ', "1.04" );
 		TCLAP::ValueArg<std::string> fFileArg( "f", "fastqfile", "Input file in fastq format", false, "", "string" );
@@ -51,7 +54,7 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList ) {
 				"Input file which was previously outputted from TreeNome", false, "", "string" );
 		TCLAP::ValueArg<std::string> sFileArg( "s", "storefile", 
 				"File in which to store the tree data", false, "", "string" );
-		TCLAP::ValueArg<int> thrArg( "t", "threads", "Number of threads to use", false, /*1*/ 8, "int" );
+		TCLAP::ValueArg<int> thrArg( "t", "threads", "Number of threads to use", false, 1, "int" );
 		std::vector<int> pAllowed = { 33, 64 };
 		TCLAP::ValuesConstraint<int> pAllowedVC( pAllowed );
 		TCLAP::ValueArg<int> phredArg( "", "phred", 
@@ -116,8 +119,8 @@ signed int createTreeFromReads( struct CMDArgs& argList )
 		writeTreesToDisk( argList.sFilename, treeTop );
 	}
 
-	//treeTop.buildSequence();
-	//treeTop.printSequence();
+	treeTop.buildSequence();
+	treeTop.printSequence();
 
 	return 0;
 }

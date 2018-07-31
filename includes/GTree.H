@@ -81,7 +81,7 @@ public:
 	/* Tree creation functions */
 	void createRoot( short ind );
 	void addReadOne( uint64_t readNum, short offset ); 
-	bool balanceNode( Node* node, bool mode );
+	void balanceNode( Node* node );
 private:
 	std::vector< std::vector< Node > > nodes;
 	void createNode( Node* node, short label, char qual, uint64_t rN, int offset );

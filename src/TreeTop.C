@@ -87,7 +87,7 @@ template <class T>
 void TreeTop<T>::printSequence()
 {
 	// 80 for terminal width's sake
-	unsigned short TWIDTH = 80;
+	unsigned short TWIDTH = 120;
 	uint64_t i = 0;
 
 	if( sequence.length() > TWIDTH )
