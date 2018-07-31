@@ -28,6 +28,7 @@ namespace mingw_fix {
 /** --------------- Helper Functions --------------- **/
 namespace GTH {
 	std::vector<SeqRead> seqReads;
+	double thresh;
 
 	char retLabel( int label )
 	{
@@ -91,10 +92,11 @@ short GTree<T>::countChildren( T* node )
 }
 
 template <typename T>
-signed short GTree<T>::mostOccs( T* node )
+signed short GTree<T>::highestThresh( T* node )
 {
 	short ind = -1;
-	double maxRat = std::numeric_limits<double>::lowest();
+	//double maxRat = std::numeric_limits<double>::lowest();
+	double maxRat = GTH::thresh;
 
 	for( short i = 0; i < NBASES; i++ ) {
 		T* tmpNode = node->subnodes[i];
@@ -117,7 +119,7 @@ void GTree<T>::followPath( T* node, short ind, std::string &sequence )
 	do {
 		children = countChildren( node );
 		sequence += GTH::retLabel( ind );
-		ind = mostOccs( node );
+		ind = highestThresh( node );
 		node->occs--;
 		double tmpD = node->weight - 1;
 		node->weight = tmpD;
@@ -151,7 +153,7 @@ void GTree<T>::addToSeq( uint64_t offset, std::string &sequence )
 		}
 	}
 
-	ind = mostOccs( node );
+	ind = highestThresh( node );
 	if( ind != -1 ) {
 		followPath( node->subnodes[ind], ind, sequence );
 		

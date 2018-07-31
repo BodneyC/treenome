@@ -14,11 +14,11 @@
 #define _NODE_
 
 #if __cplusplus < 201103L
-#error This code requires C++11 for threading
+#error This code requires C++11
 #endif /*c++11 check*/
 
 #define NBASES 4
-#define RES 50
+#define RES 500
 
 #include <atomic>
 #include <omp.h>

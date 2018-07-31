@@ -38,6 +38,7 @@ protected:
 	T trees[NBASES];
 
 	short maxPath();
+	bool rootOccsAboveThresh();
 	bool rootOccsExist();
 };
 

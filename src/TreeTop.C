@@ -46,13 +46,32 @@ short TreeTop<T>::maxPath()
 	return start;
 }
 
+template<class T>
+bool TreeTop<T>::rootOccsAboveThresh()
+{
+	short ret = 0;
+
+	for( int i = 0; i < NBASES; i++ ) {
+		if( trees[i].getRoot()->occs ) {
+			if( trees[i].getRoot()->weight / 
+					static_cast<double>(trees[i].getRoot()->occs) < GTH::thresh) {
+				ret++;
+			}
+		} else if( !trees[i].getRoot()->occs ){
+			ret++;
+		}
+	}
+
+	return ret == NBASES ? 0 : 1;
+}
+
 template <class T>
 void TreeTop<T>::buildSequence()
 {
 	maxPath();
 
 	uint64_t offset = 1;
-	while( rootOccsExist() ) {
+	while( rootOccsAboveThresh() ) {
 
 		// Possibly make is a tighter gap as its working from single letters
 		// ( this would actually be the k-mer match )

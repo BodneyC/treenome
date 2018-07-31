@@ -42,7 +42,7 @@ void GTreefReads::createRoot( short ind )
 	uint32_t i;
 	char qual;
 	root = &( nodes[nodesCnt][head] );
-	nNodes++;
+	//nNodes++;
 
 	for( i = 0; i < GTH::seqReads.size(); i++ ) {
 		int offset = -1;
@@ -75,7 +75,6 @@ void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int
 		head = 0;
 	}
 	node->subnodes[ind] = &( nodes[nodesCnt][head] );
-
 	nNodes++;
 	omp_unset_lock( &lock );
 

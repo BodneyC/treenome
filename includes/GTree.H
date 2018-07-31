@@ -29,6 +29,7 @@
 // GTree Helpers
 namespace GTH {
 	extern std::vector<SeqRead> seqReads;
+	extern double thresh;
 
 	char retLabel( int label );
 	float getNewWeight( double curWeight, int64_t occs, char qual );
@@ -62,11 +63,11 @@ public:
 	std::string storeTree( short label );
 protected:
 	T* root;
-	std::atomic<uint64_t> head, nNodes;
+	std::atomic<int64_t> head, nNodes;
 	std::string basePaths, occuPaths, treeString;
 
 	/* Helpers requiring templates */
-	signed short mostOccs( T* node );
+	signed short highestThresh( T* node );
 	short countChildren( T* node );
 
 	/* Public->private overloads */
@@ -85,7 +86,7 @@ public:
 private:
 	std::vector< std::vector< Node > > nodes;
 	void createNode( Node* node, short label, char qual, uint64_t rN, int offset );
-	std::atomic<uint64_t> nodesCnt;
+	std::atomic<int64_t> nodesCnt;
 	omp_lock_t lock;
 	////TMP
 	std::mutex gtMut;

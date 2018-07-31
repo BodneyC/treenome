@@ -54,7 +54,8 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 				"Input file which was previously outputted from TreeNome", false, "", "string" );
 		TCLAP::ValueArg<std::string> sFileArg( "s", "storefile", 
 				"File in which to store the tree data", false, "", "string" );
-		TCLAP::ValueArg<int> thrArg( "t", "threads", "Number of threads to use", false, 1, "int" );
+		TCLAP::ValueArg<int> threadArg( "t", "threads", "Number of threads to use", false, 1, "int" );
+		TCLAP::ValueArg<double> threshArg( "", "thresh", "Threashold value", false, 0.3f, "0 to 1" );
 		std::vector<int> pAllowed = { 33, 64 };
 		TCLAP::ValuesConstraint<int> pAllowedVC( pAllowed );
 		TCLAP::ValueArg<int> phredArg( "", "phred", 
@@ -63,7 +64,8 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 
 		cmd.xorAdd( fFileArg, lFileArg );
 		cmd.add( sFileArg );
-		cmd.add( thrArg );
+		cmd.add( threadArg );
+		cmd.add( threshArg );
 		cmd.add( phredArg );
 		cmd.parse( argc, argv );
 
@@ -81,12 +83,13 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 		argList.sFilename = sFileArg.getValue();
 		if( sFileArg.isSet() )
 			argList.storeToFile = 1;
-		NUM_THREADS = thrArg.getValue();
+		NUM_THREADS = threadArg.getValue();
 		if( NUM_THREADS > omp_get_max_threads() )
 			return THREAD_ERROR;
 		argList.phredBase = phredArg.getValue();
 		argList.printToScreen = oSwitch.getValue();
-	} catch (TCLAP::ArgException &e) {
+		GTH::thresh = threshArg.getValue();
+	} catch ( TCLAP::ArgException &e ) {
 		std::cerr << "Error: " << e.error() << " for arg " << e.argId() << std::endl;
 	}
 	return 0;
@@ -157,7 +160,7 @@ int main( int argc, char** argv )
 
 	omp_set_num_threads( NUM_THREADS );
 
-	std::cout << NUM_THREADS << std::endl;
+	std::cout << "Number of threads in use: " << NUM_THREADS << std::endl;
 
 	if( argList.loadFile ) {
 		progFail = loadTreeFromFile( argList );
