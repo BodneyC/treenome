@@ -66,10 +66,8 @@ void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int
 {
 	omp_set_lock( &lock );
 	head++;
-	if( head == nodes.size() ) {
-		std::cout << nodes.size() << std::endl;
+	if( head == nodes.size() ) 
 		nodes.resize( nodes.size() + RES );
-	}
 	node->subnodes[ind] = &( nodes[head] );
 	omp_unset_lock( &lock );
 	nNodes++;

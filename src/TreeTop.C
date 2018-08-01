@@ -12,7 +12,10 @@
  *******************************************************************/
 #include "../includes/TreeTop.H"
 
+#define MER_LEN 3
+
 /** ------------- Sequence Generation -------------- **/
+// Needed?
 template <class T>
 bool TreeTop<T>::rootOccsExist()
 {
@@ -25,44 +28,45 @@ bool TreeTop<T>::rootOccsExist()
 	return ret == NBASES ? 0 : 1;
 }
 
-template <class T>
-short TreeTop<T>::maxPath()
-{
-	int start = 0;
-	double maxRat = std::numeric_limits<double>::lowest();
-
-	for( short i = 0; i < NBASES; i++ ) {
-		if( trees[i].getRoot()->occs ) {
-			double curRat = trees[i].getRoot()->weight / static_cast<double>(trees[i].getRoot()->occs);
-			if( curRat > maxRat ) {
-				maxRat = curRat;
-				start = i;
-			}
-		}
-	}
-
-	trees[start].followPath( trees[start].getRoot(), start, sequence );
-
-	return start;
-}
-
 template<class T>
 bool TreeTop<T>::rootOccsAboveThresh()
 {
 	short ret = 0;
 
 	for( int i = 0; i < NBASES; i++ ) {
-		if( trees[i].getRoot()->occs ) {
-			if( trees[i].getRoot()->weight / 
-					static_cast<double>(trees[i].getRoot()->occs) < GTH::thresh) {
+		if( GTH::startOccs[i] ) {
+			if( GTH::startWeights[i] / static_cast<double>(GTH::startOccs[i]) < GTH::thresh) {
 				ret++;
 			}
-		} else if( !trees[i].getRoot()->occs ){
+		} else if( !GTH::startOccs[i] ) {
 			ret++;
 		}
 	}
 
 	return ret == NBASES ? 0 : 1;
+}
+
+template <class T>
+short TreeTop<T>::maxPath()
+{
+	int start = 0;
+	double maxRat = GTH::thresh;
+
+	for( short i = 0; i < NBASES; i++ ) {
+		if( GTH::startOccs[i] ) {
+			double curRat = GTH::startWeights[i] / static_cast<double>(GTH::startOccs[i]);
+			if( curRat >= maxRat ) {
+				maxRat = curRat;
+				start = i;
+			}
+		}
+	}
+
+	GTH::startWeights[start]--;
+	GTH::startOccs[start]--;
+	trees[start].followPath( trees[start].getRoot(), start, sequence );
+
+	return start;
 }
 
 template <class T>
@@ -75,13 +79,13 @@ void TreeTop<T>::buildSequence()
 
 		// Possibly make is a tighter gap as its working from single letters
 		// ( this would actually be the k-mer match )
-		if( offset == sequence.length() - 1 ) {
+		if( offset == sequence.length() - MER_LEN ) {
 			sequence += 'N';
 			maxPath();
-			offset += 2;
+			offset += MER_LEN + 1;
 		}
 
-		if( trees[BASE_IND( sequence[offset] )].getRoot()->occs > 0 )
+		if( trees[BASE_IND( sequence[offset] )].getRoot()->getRatio() >= GTH::thresh )
 			trees[BASE_IND( sequence[offset] )].addToSeq( offset, sequence );
 		offset++;
 	}

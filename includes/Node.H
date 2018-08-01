@@ -35,6 +35,8 @@ typedef struct BNode {
 	//Copy and assignment functions needed for atomics
 	BNode( const BNode& tmpNode );
 	BNode& operator=( const BNode& tmpNode );
+
+	double getRatio();
 } BNode;
 
 typedef struct Node : public BNode {

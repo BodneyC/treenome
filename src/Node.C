@@ -39,6 +39,11 @@ BNode& BNode::operator=( const BNode& tmpBNode )
 	return* this;
 }
 
+double BNode::getRatio()
+{
+	return weight / static_cast<double>( occs );
+}
+
 Node::Node(): offset( 0 ), readNum( 0 )
 {
 	for( int i = 0; i < NBASES; i++ )
