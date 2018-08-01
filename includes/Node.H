@@ -28,6 +28,7 @@ extern int NUM_THREADS;
 typedef struct BNode {
 	std::atomic<int64_t> occs;
 	std::atomic<double> weight;
+	std::atomic<int32_t> endCnt;
 	omp_lock_t lock;
 
 	BNode();

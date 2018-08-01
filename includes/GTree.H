@@ -14,8 +14,8 @@
 #ifndef _GTREE_
 #define _GTREE_
 
-////TMP
-#include <mutex>
+//TMP
+//#include <mutex>
 
 #include <iostream>
 #include <string>
@@ -33,6 +33,8 @@
 namespace GTH {
 	extern std::vector<SeqRead> seqReads;
 	extern double thresh;
+	extern double startWeights[NBASES];
+	extern int64_t startOccs[NBASES];
 
 	char retLabel( int label );
 	float getNewWeight( double curWeight, int64_t occs, char qual );

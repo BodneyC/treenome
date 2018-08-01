@@ -16,6 +16,7 @@
  * - Double accuracy in summation (negligible)
  * - Reconstructed tree analyses
  * - Timing and memory recording
+ * - End of sequcence counter, run in reverse to get first base
  */
 #include "../includes/tclap/CmdLine.h"
 #include "../includes/InputFile.H"

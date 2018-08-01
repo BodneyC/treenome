@@ -29,6 +29,8 @@ namespace mingw_fix {
 namespace GTH {
 	std::vector<SeqRead> seqReads;
 	double thresh;
+	double startWeights[NBASES];
+	int64_t startOccs[NBASES];
 
 	char retLabel( int label )
 	{

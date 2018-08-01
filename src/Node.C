@@ -12,7 +12,7 @@
  *******************************************************************/
 #include "../includes/Node.H"
 
-BNode::BNode(): occs( 0 ), weight( 0 )
+BNode::BNode(): occs( 0 ), weight( 0 ), endCnt( 0 )
 {
 	omp_init_lock( &lock );
 }

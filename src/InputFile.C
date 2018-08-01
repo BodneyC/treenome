@@ -39,6 +39,10 @@ bool InputFile::readFastQ()
 
 			qualLine = line;
 			GTH::seqReads.push_back( SeqRead( seqLine, qualLine, phredBase ) );
+
+			// NEW
+			GTH::startOccs[BASE_IND( seqLine[0] )]++;
+			GTH::startWeights[BASE_IND( seqLine[0] )] += GTH::phredQuals[qualLine[0] - phredBase];
 		}
 	}
 
