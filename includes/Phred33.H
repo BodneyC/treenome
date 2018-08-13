@@ -1,3 +1,16 @@
+/********************************************************************
+ * Filename: Phred33.H [C++ header code]
+ *
+ * Description: File containing the probabilities of correct base 
+ *				reads as per Phred33 quality scores (1 - P_error)
+ *
+ * Author: Primary - Benjamin Carrington
+ *		   Secondary - Dr. Ben Mora
+ *
+ * Organisation: Swansea University
+ * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ *
+ *******************************************************************/
 namespace GTH {
 	const double phredQuals[42] = {
 		0,        0.205672, 0.369043, 0.498813, 0.601893, 0.683772, 0.748811, 

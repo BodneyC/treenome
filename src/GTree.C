@@ -48,13 +48,6 @@ namespace GTH {
 		}
 	}
 
-	//float getNewWeight( double curWeight, int64_t occs, char qual )
-	//{
-	//	// Cumulative average: A_{n+1} = ((A_n + x_{n+1}) - A_n) / n + 1
-	//	return curWeight += ( ( static_cast<double>( qual ) - curWeight ) /
-	//			static_cast<double>( occs ) );
-	//}
-
 	void removeDoubleEnding( std::string& doubleString )
 	{
 		doubleString.erase( doubleString.find_last_not_of('0') + 1, std::string::npos );
