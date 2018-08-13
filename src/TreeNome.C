@@ -57,17 +57,17 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 				"File in which to store the tree data", false, "", "string" );
 		TCLAP::ValueArg<int> threadArg( "t", "threads", "Number of threads to use", false, 1, "int" );
 		TCLAP::ValueArg<double> threshArg( "", "thresh", "Threashold value", false, 0.3f, "0 to 1" );
-		std::vector<int> pAllowed = { 33, 64 };
-		TCLAP::ValuesConstraint<int> pAllowedVC( pAllowed );
-		TCLAP::ValueArg<int> phredArg( "", "phred", 
-				"Phred base of qualities in fastq", false, 33, &pAllowedVC );
+		std::vector<std::string> pAllowed = { "Phred+33", "Phred+64", "Solexa+64" };
+		TCLAP::ValuesConstraint<std::string> pAllowedVC( pAllowed );
+		TCLAP::ValueArg<std::string> scoreArg( "", "score-sys", 
+				"Scoring system. Phred+33 default (Sanger)", false, "Phred+33", &pAllowedVC );
 		TCLAP::SwitchArg oSwitch( "o", "stdout", "Print to stdout", cmd, 0 );
 
 		cmd.xorAdd( fFileArg, lFileArg );
 		cmd.add( sFileArg );
 		cmd.add( threadArg );
 		cmd.add( threshArg );
-		cmd.add( phredArg );
+		cmd.add( scoreArg );
 		cmd.parse( argc, argv );
 
 		if( !fFileArg.isSet() && !lFileArg.isSet() )
@@ -87,7 +87,17 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 		NUM_THREADS = threadArg.getValue();
 		if( NUM_THREADS > omp_get_max_threads() )
 			return THREAD_ERROR;
-		argList.phredBase = phredArg.getValue();
+		
+		GTH::scoreSys = 0;
+		if( scoreArg.getValue() == "Phred+33" )
+			argList.phredBase = 33;
+		else if( scoreArg.getValue() == "Phred+64" )
+			argList.phredBase = 64;
+		else if( scoreArg.getValue() == "Solexa+64" ) {
+			argList.phredBase = 59;
+			GTH::scoreSys = 1;
+		}
+
 		argList.printToScreen = oSwitch.getValue();
 		GTH::thresh = threshArg.getValue();
 	} catch ( TCLAP::ArgException &e ) {
@@ -125,6 +135,8 @@ signed int createTreeFromReads( struct CMDArgs& argList )
 
 	treeTop.buildSequence();
 	treeTop.printSequence();
+	
+	//std::getchar();
 
 	return 0;
 }

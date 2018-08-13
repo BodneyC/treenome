@@ -31,6 +31,7 @@ namespace GTH {
 	double thresh;
 	double startWeights[NBASES];
 	int64_t startOccs[NBASES];
+	int scoreSys;
 
 	char retLabel( int label )
 	{

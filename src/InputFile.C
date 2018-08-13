@@ -42,7 +42,7 @@ bool InputFile::readFastQ()
 
 			// NEW
 			GTH::startOccs[BASE_IND( seqLine[0] )]++;
-			GTH::startWeights[BASE_IND( seqLine[0] )] += GTH::phredQuals[qualLine[0] - phredBase];
+			GTH::startWeights[BASE_IND( seqLine[0] )] += GTH::phredQuals[GTH::scoreSys][qualLine[0] - phredBase];
 		}
 	}
 

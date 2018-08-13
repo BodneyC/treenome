@@ -32,17 +32,14 @@ void TreeTopfReads::threadFunc( uint64_t i )
 
 void TreeTopfReads::processReadsOne()
 {
-	//for( uint64_t i = 0; i < GTH::seqReads.size(); i++ ) {
-	//	for( short j = 0; j < GTH::seqReads[i].size(); j++ ) {
-	//		std::cout << "RN: " << i << ", IND: " << j << ", QUAL: " << static_cast<int>(GTH::seqReads[i].getQual( j )) << std::endl;
-	//	}
-	//}
-
 #pragma omp parallel num_threads( NUM_THREADS )
 {
 	//for( uint64_t i = 0; i < GTH::seqReads.size(); i += NUM_THREADS ) {
 	for( uint64_t i = 0; i < GTH::seqReads.size(); i += NUM_THREADS ) {
-	//std::cout << i << std::endl;
+//#pragma omp single
+//{
+//	std::cout << "READ: " << i << std::endl;
+//}
 #pragma omp for schedule( static, 1 )
 	for( int j = 0; j < NUM_THREADS; j++ ) 
 		if( i + j < GTH::seqReads.size() )

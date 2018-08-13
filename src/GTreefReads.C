@@ -23,7 +23,7 @@ GTreefReads::GTreefReads() {
 /** ---------------- Tree Creation ----------------- **/
 void GTreefReads::updateWeight( Node* node, char qual ) {
 	double newWeight, curWeight = node->weight;
-	double pBQual = GTH::phredQuals[static_cast<int>( qual )];
+	double pBQual = GTH::phredQuals[GTH::scoreSys][static_cast<int>( qual )];
 	do {
 		newWeight = curWeight + pBQual;
 	} while( !( node->weight.compare_exchange_weak( curWeight, newWeight ) ) );
@@ -55,7 +55,7 @@ void GTreefReads::createRoot( short ind )
 			qual = GTH::seqReads[i].getQual( offset );
 			root->readNum = i;
 			root->offset = offset;
-			root->weight = GTH::phredQuals[static_cast<int>( qual )];
+			root->weight = GTH::phredQuals[GTH::scoreSys][static_cast<int>( qual )];
 			root->occs = 1;
 			break;
 		}
@@ -66,8 +66,9 @@ void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int
 {
 	omp_set_lock( &lock );
 	head++;
-	if( head == nodes.size() ) 
+	if( head == nodes.size() ) {
 		nodes.resize( nodes.size() + RES );
+	}
 	node->subnodes[ind] = &( nodes[head] );
 	omp_unset_lock( &lock );
 	nNodes++;
@@ -76,7 +77,7 @@ void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int
 	Node* tmpNode = node->subnodes[ind];
 	tmpNode->readNum = rN;
 	tmpNode->offset = offset;
-	tmpNode->weight = GTH::phredQuals[static_cast<int>( qual )];
+	tmpNode->weight = GTH::phredQuals[GTH::scoreSys][static_cast<int>( qual )];
 	tmpNode->occs = 1;
 	for( int i = 0; i < NBASES; i++ )
 		tmpNode->subnodes[i] = nullptr;
