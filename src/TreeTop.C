@@ -75,10 +75,14 @@ void TreeTop<T>::buildSequence()
 	maxPath();
 
 	uint64_t offset = 1;
+//#pragma omp parallel num_threads( NUM_THREADS ) shared( offset )
+//{
 	while( rootOccsAboveThresh() ) {
 
 		// Possibly make is a tighter gap as its working from single letters
 		// ( this would actually be the k-mer match )
+//#pragma omp single
+//{
 		if( offset == sequence.length() - MER_LEN ) {
 			sequence += 'N';
 			maxPath();
@@ -88,7 +92,10 @@ void TreeTop<T>::buildSequence()
 		if( trees[BASE_IND( sequence[offset] )].getRoot()->getRatio() >= GTH::thresh )
 			trees[BASE_IND( sequence[offset] )].addToSeq( offset, sequence );
 		offset++;
+//}
 	}
+//}
+
 }
 
 /** --------------- Misc Functions ----------------- **/

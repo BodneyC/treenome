@@ -1,4 +1,4 @@
-CC=clang++
+CC=g++
 CFLAGS=-g -Wall -std=c++11 -O0
 LIBS=-fopenmp
 INC=-I./includes -I./includes/tclap

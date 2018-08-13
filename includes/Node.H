@@ -24,7 +24,6 @@
 
 extern int NUM_THREADS;
 
-// The node type for the GTrees 
 typedef struct BNode {
 	std::atomic<int64_t> occs;
 	std::atomic<double> weight;
