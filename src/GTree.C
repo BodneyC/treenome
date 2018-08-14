@@ -16,7 +16,6 @@
 #ifdef __MINGW64__
 #include <sstream>
 namespace mingw_fix {
-	template< typename T > std::string to_string( const T &val )
 	{
 		std::ostringstream ss;
 		ss << val ;
@@ -67,16 +66,23 @@ namespace GTH {
 }
 
 /** ------------- GTree Cons and Dees -------------- **/
-template <typename T>
-GTree<T>::GTree(): 
+GTree::GTree(): 
 	root( nullptr ), head( 0 ), nNodes( 0 ), 
-	basePaths( "" ), occuPaths( "" ), treeString( "" )
+	basePaths( "" ), occuPaths( "" ), treeString( "" ),
+	tmpNode( nullptr )
 { 
 }
 
 /** ------------- - Helper Functions --------------- **/
-template <typename T>
-short GTree<T>::countChildren( T* node )
+Node* GTree::getRoot()
+{
+	if( root ) 
+		return root; 
+	else 
+		return nullptr; 
+}
+
+short GTree::countChildren( Node* node )
 {
 	short children = 0;
 
@@ -87,15 +93,14 @@ short GTree<T>::countChildren( T* node )
 	return children;
 }
 
-template <typename T>
-signed short GTree<T>::highestThresh( T* node )
+signed short GTree::highestThresh( Node* node )
 {
 	short ind = -1;
 	//double maxRat = std::numeric_limits<double>::lowest();
 	double maxRat = GTH::thresh;
 
 	for( short i = 0; i < NBASES; i++ ) {
-		T* tmpNode = node->subnodes[i];
+		Node* tmpNode = node->subnodes[i];
 		if( tmpNode && tmpNode->occs ) {
 			double curRat = tmpNode->getRatio();
 			if( curRat > maxRat ) {
@@ -108,8 +113,7 @@ signed short GTree<T>::highestThresh( T* node )
 	return ind;
 }
 
-template <typename T>
-void GTree<T>::followPath( T* node, short ind, std::string &sequence )
+void GTree::followPath( Node* node, short ind, std::string &sequence )
 {
 	short children;
 	do {
@@ -125,12 +129,11 @@ void GTree<T>::followPath( T* node, short ind, std::string &sequence )
 }
 
 /** --------------- Genome Creation ---------------- **/
-template <typename T>
-void GTree<T>::addToSeq( uint64_t offset, std::string &sequence )
+void GTree::addToSeq( uint64_t offset, std::string &sequence )
 {
-	T* node = root;
+	Node* node = root;
 	short ind = 0;
-	std::vector< T* > nPath;
+	std::vector< Node* > nPath;
 
 	// End of current sequence	
 	for( uint32_t i = offset + 1; i < sequence.length(); i++ ) {
@@ -157,8 +160,7 @@ void GTree<T>::addToSeq( uint64_t offset, std::string &sequence )
 }
 
 /** ---------------- Tree Storage ------------------ **/
-template <typename T>
-std::string GTree<T>::storeTree( short label ) {
+std::string GTree::storeTree( short label ) {
 	treeString += GTH::valToString( nNodes ) + '\n';
 	std::string val[2] = {
 		GTH::valToString( root->occs ),
@@ -171,8 +173,7 @@ std::string GTree<T>::storeTree( short label ) {
 	return treeString;
 }
 
-template <typename T>
-void GTree<T>::storeTree( T* node )
+void GTree::storeTree( Node* node )
 {
 	for( int i = 0; i < NBASES; i++ ) {
 		if( node->subnodes[i] ) {
@@ -190,8 +191,12 @@ void GTree<T>::storeTree( T* node )
 }
 
 /** ---------------- Path Printing ----------------- **/
-template <typename T>
-void GTree<T>::printAllPaths( T* node, int len, short label )
+void GTree::printAllPaths( short label ) { 
+	printAllPaths( root, 0, label );
+	basePaths = occuPaths = "";
+}
+
+void GTree::printAllPaths( Node* node, int len, short label )
 {
     if( !node )
         return;
@@ -221,5 +226,3 @@ void GTree<T>::printAllPaths( T* node, int len, short label )
 		printAllPaths( node->subnodes[i], len, i );
 }
 
-template class GTree<Node>;
-template class GTree<pNode>;

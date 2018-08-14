@@ -1,5 +1,5 @@
 /********************************************************************
- * Filename: GTreefFile.C [C++ source code]
+ * Filename: GTree.C [C++ source code]
  *
  * Description: Implementation of GTree subclass, for building the 
  *		tree from a file outputted from the program
@@ -13,15 +13,7 @@
  *******************************************************************/
 #include "../includes/GTree.H"
 
-struct NodeInfo {
-	int ind, comCnt;
-	int64_t occs;
-	double weight;
-
-	NodeInfo(): ind( 0 ), comCnt( 0 ), occs( 0 ), weight( 0 ) {  }
-};
-
-void GTreefFile::getNextNode( struct NodeInfo& nInf, std::stringstream& ss )
+void GTree::getNextNode( struct NodeInfo& nInf, std::stringstream& ss )
 {
 	std::string line;
 	char tmpChar;
@@ -40,14 +32,14 @@ void GTreefFile::getNextNode( struct NodeInfo& nInf, std::stringstream& ss )
 	nInf.weight = std::stod( line );
 }
 
-void GTreefFile::createNode( struct NodeInfo& nInf )
+void GTree::createNode( struct NodeInfo& nInf )
 {
 	for( int i = 0; i < nInf.comCnt; i++ ) {
 		//std::cout << tmpNode << std::endl;
 		tmpNode = tmpNode->parent;
 	}
 	
-	tmpNode->subnodes[nInf.ind] = &( pNodes[head] );
+	tmpNode->subnodes[nInf.ind] = &( vNodes[head] );
 	head++;
 
 	tmpNode->subnodes[nInf.ind]->parent = tmpNode;
@@ -57,11 +49,11 @@ void GTreefFile::createNode( struct NodeInfo& nInf )
 	tmpNode->weight = nInf.weight;
 }
 
-void GTreefFile::createRoot( std::stringstream& ss )
+void GTree::createRoot( std::stringstream& ss )
 {
 	struct NodeInfo nInf;
 	getNextNode( nInf, ss );
-	root = &( pNodes[0] );
+	root = &( vNodes[0] );
 	tmpNode = root;
 	head++;
 
@@ -69,13 +61,13 @@ void GTreefFile::createRoot( std::stringstream& ss )
 	tmpNode->weight = nInf.weight;
 }
 
-void GTreefFile::processSString( std::stringstream& ss )
+void GTree::processSString( std::stringstream& ss )
 {
 	std::string line;
 	std::getline( ss, line, '\n' );
 
 	nNodes = std::stol( line );
-	pNodes.resize( nNodes );
+	vNodes.resize( nNodes );
 
 	createRoot( ss );
 

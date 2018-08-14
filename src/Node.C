@@ -1,7 +1,7 @@
 /********************************************************************
- * Filename: BNode.C [C++ source code]
+ * Filename: Node.C [C++ source code]
  *
- * Description: Implementation of BNode class
+ * Description: Implementation of Node class
  *
  * Author: Primary - Benjamin Carrington
  *		   Secondary - Dr. Ben Mora
@@ -12,25 +12,28 @@
  *******************************************************************/
 #include "../includes/Node.H"
 
-BNode::BNode(): occs( 0 ), weight( 0 ), endCnt( 0 )
+Node::Node(): occs( 0 ), weight( 0 ), endCnt( 0 ), parent( nullptr )
 {
 	omp_init_lock( &lock );
+
+	for( int i = 0; i < NBASES; i++ )
+		subnodes[i] = nullptr;
 }
 
-BNode::BNode( const BNode& tmpBNode ) 
+Node::Node( const Node& tmpNode ) 
 {
-	float tmpWeight = tmpBNode.weight;
-	int64_t tmpOccs = tmpBNode.occs;
+	float tmpWeight = tmpNode.weight;
+	int64_t tmpOccs = tmpNode.occs;
 
 	omp_init_lock( &lock );
 	weight = tmpWeight;
 	occs = tmpOccs;
 }
 
-BNode& BNode::operator=( const BNode& tmpBNode ) 
+Node& Node::operator=( const Node& tmpNode ) 
 {
-	float tmpWeight = tmpBNode.weight;
-	int64_t tmpOccs = tmpBNode.occs;
+	float tmpWeight = tmpNode.weight;
+	int64_t tmpOccs = tmpNode.occs;
 
 	omp_init_lock( &lock );
 	this->weight = tmpWeight;
@@ -39,21 +42,8 @@ BNode& BNode::operator=( const BNode& tmpBNode )
 	return* this;
 }
 
-double BNode::getRatio()
+double Node::getRatio()
 {
 	return weight / static_cast<double>( occs );
-}
-
-Node::Node(): offset( 0 ), readNum( 0 )
-{
-	for( int i = 0; i < NBASES; i++ )
-		subnodes[i] = nullptr;
-}
-
-
-pNode::pNode(): parent( nullptr )
-{
-	for( int i = 0; i < NBASES; i++ )
-		subnodes[i] = nullptr;
 }
 

@@ -24,33 +24,23 @@
 
 extern int NUM_THREADS;
 
-typedef struct BNode {
+typedef struct Node {
 	std::atomic<int64_t> occs;
 	std::atomic<double> weight;
 	std::atomic<int32_t> endCnt;
 	omp_lock_t lock;
-
-	BNode();
-	//Copy and assignment functions needed for atomics
-	BNode( const BNode& tmpNode );
-	BNode& operator=( const BNode& tmpNode );
-
-	double getRatio();
-} BNode;
-
-typedef struct Node : public BNode {
 	short offset;
 	int64_t readNum;
 	Node* subnodes[NBASES];
+	// TMP
+	Node* parent;
 
 	Node();
+	//Copy and assignment functions needed for atomics
+	Node( const Node& tmpNode );
+	Node& operator=( const Node& tmpNode );
+
+	double getRatio();
 } Node;
-
-typedef struct pNode : BNode {
-	pNode* subnodes[NBASES];
-	pNode* parent;
-
-	pNode();
-} pNode;
 
 #endif /*_NODE*/

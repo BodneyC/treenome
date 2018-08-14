@@ -18,50 +18,38 @@
 #include "GTree.H"
 
 // Structure which holds read data and the four GTrees
-template <class T>
 class TreeTop {
 public:
 	std::string treeStrings[NBASES];
 
-	TreeTop(): sequence( "" ), nReads( 0 ), readLength( 0 ) {  }
+	TreeTop(): sequence( "" ), nReads( 0 ), readLength( 0 ), iFilename( "" ) {  }
+	explicit TreeTop( const std::string& _iFilename ): 
+		 sequence( "" ), nReads( 0 ), readLength( 0 ), iFilename( _iFilename ) {  }
 
 	/* Common */
 	void buildSequence();
 	void printTrees();
 	void storeTrees();
 	void printSequence();
+	/* FReads */
+	void processReadsOne();
+	/* FFile */
+	void reconstructTrees();
+	
 private:
 	std::string sequence;
-protected:
 	int64_t nReads;
 	int readLength;
-	T trees[NBASES];
+	GTree trees[NBASES];
+	std::stringstream ss[NBASES];
+	std::string iFilename;
 
 	short maxPath();
 	bool rootOccsAboveThresh();
 	bool rootOccsExist();
-};
-
-// Class for processing reads
-class TreeTopfReads : public TreeTop<GTreefReads> {
-public:
-	TreeTopfReads();
-	void processReadsOne();
-private:
+	/* FReads */
 	void createRoots();
 	void threadFunc( uint64_t i );
-};
-
-// Class for processing outfiles
-class TreeTopfFile : public TreeTop<GTreefFile> {
-public:
-	explicit TreeTopfFile( const std::string& _iFilename ): 
-		iFilename( _iFilename ) {  }
-
-	void reconstructTrees();
-private:
-	std::stringstream ss[NBASES];
-	std::string iFilename;
 };
 
 #endif /*_TREETOP_*/

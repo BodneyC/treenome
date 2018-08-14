@@ -106,7 +106,7 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 	return 0;
 }
 
-void writeTreesToDisk( std::string sFilename, TreeTop<GTreefReads>& treeTop )
+void writeTreesToDisk( std::string sFilename, TreeTop& treeTop )
 {
 	std::ofstream outFile( sFilename );
 	for( int i = 0; i < NBASES; i++ )
@@ -123,7 +123,7 @@ signed int createTreeFromReads( struct CMDArgs& argList )
 		std::cout << inpFile.nReads << " records found\n" << std::endl;
 	}
 
-	TreeTopfReads treeTop;
+	TreeTop treeTop;
 	treeTop.processReadsOne();
 	std::cout << "\n----------" << std::endl;
 	if( argList.printToScreen )
@@ -143,7 +143,7 @@ signed int createTreeFromReads( struct CMDArgs& argList )
 
 signed int loadTreeFromFile( struct CMDArgs& argList )
 {
-	TreeTopfFile treeTop( argList.lFilename );
+	TreeTop treeTop( argList.lFilename );
 	treeTop.reconstructTrees();
 	if( argList.printToScreen )
 		treeTop.printTrees();

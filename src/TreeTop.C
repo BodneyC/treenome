@@ -14,10 +14,11 @@
 
 #define MER_LEN 3
 
+int NUM_THREADS;
+
 /** ------------- Sequence Generation -------------- **/
 // Needed?
-template <class T>
-bool TreeTop<T>::rootOccsExist()
+bool TreeTop::rootOccsExist()
 {
 	short ret = 0;
 
@@ -28,8 +29,7 @@ bool TreeTop<T>::rootOccsExist()
 	return ret == NBASES ? 0 : 1;
 }
 
-template<class T>
-bool TreeTop<T>::rootOccsAboveThresh()
+bool TreeTop::rootOccsAboveThresh()
 {
 	short ret = 0;
 
@@ -46,8 +46,7 @@ bool TreeTop<T>::rootOccsAboveThresh()
 	return ret == NBASES ? 0 : 1;
 }
 
-template <class T>
-short TreeTop<T>::maxPath()
+short TreeTop::maxPath()
 {
 	int start = 0;
 	double maxRat = GTH::thresh;
@@ -69,8 +68,7 @@ short TreeTop<T>::maxPath()
 	return start;
 }
 
-template <class T>
-void TreeTop<T>::buildSequence()
+void TreeTop::buildSequence()
 {
 	maxPath();
 
@@ -99,22 +97,19 @@ void TreeTop<T>::buildSequence()
 }
 
 /** --------------- Misc Functions ----------------- **/
-template <class T>
-void TreeTop<T>::storeTrees()
+void TreeTop::storeTrees()
 {
 	for( int i = 0; i < NBASES; i++ )
 		treeStrings[i] = trees[i].storeTree( i );
 }
 
-template <class T>
-void TreeTop<T>::printTrees()
+void TreeTop::printTrees()
 {
 	for( int i = 0; i < NBASES; i++ )
 		trees[i].printAllPaths( i );
 }
 
-template <class T>
-void TreeTop<T>::printSequence()
+void TreeTop::printSequence()
 {
 	// 80 for terminal width's sake
 	unsigned short TWIDTH = 120;
@@ -127,5 +122,55 @@ void TreeTop<T>::printSequence()
 	std::cout << sequence.substr( i, sequence.length() - i ) << std::endl;
 }
 
-template class TreeTop<GTreefReads>;
-template class TreeTop<GTreefFile>;
+/** ------------ Tree Reconstruction --------------- **/
+void TreeTop::reconstructTrees()
+{
+	std::ifstream inFile( iFilename );
+	std::stringstream ss[NBASES];
+	std::string line;
+
+	int i = 0;
+	while( std::getline( inFile, line ) ) {
+		ss[i / 2] << line;
+		if( !( i % 2 ) )
+			ss[i / 2] << '\n';
+		i++;
+	}
+
+	for( int i = 0; i < NBASES; i++ ) {
+		trees[i].processSString( ss[i] );
+	}
+}
+
+/** --------------- Read Processing ---------------- **/
+void TreeTop::threadFunc( uint64_t i )
+{
+	for( short j = 0; j < GTH::seqReads[i].size(); j++ ) {
+		//if( GTH::seqReads[i].getBaseInd( j ) == 1 )
+			trees[GTH::seqReads[i].getBaseInd( j )].addReadOne( i, j );
+	}
+}
+
+void TreeTop::processReadsOne()
+{
+	for( int i = 0; i < NBASES; i++ ) {
+		trees[i].init();
+		trees[i].createRoot( i );
+	}
+
+#pragma omp parallel num_threads( NUM_THREADS )
+{
+	//for( uint64_t i = 0; i < GTH::seqReads.size(); i += NUM_THREADS ) {
+	for( uint64_t i = 0; i < GTH::seqReads.size(); i += NUM_THREADS ) {
+//#pragma omp single
+//{
+//	std::cout << "READ: " << i << std::endl;
+//}
+#pragma omp for schedule( static, 1 )
+	for( int j = 0; j < NUM_THREADS; j++ ) 
+		if( i + j < GTH::seqReads.size() )
+			threadFunc( i + j );
+	}
+}
+}
+

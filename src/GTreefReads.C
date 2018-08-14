@@ -1,5 +1,5 @@
 /********************************************************************
- * Filename: GTreefReads.C [C++ source code]
+ * Filename: GTree.C [C++ source code]
  *
  * Description: Implementation of GTree subclass, for building the 
  *		tree from a set of reads
@@ -13,15 +13,15 @@
  *******************************************************************/
 #include "../includes/GTree.H"
 
-GTreefReads::GTreefReads() {
+void GTree::init() {
 	// Because reallocation of std::vectors is assured if its class is a 
 	// std::vector, a vector of vectors has been used with a 1-by-1 
 	// .push_back()
 	omp_init_lock( &lock );
-	nodes.resize( RES );
+	dNodes.resize( RES );
 }
 /** ---------------- Tree Creation ----------------- **/
-void GTreefReads::updateWeight( Node* node, char qual ) {
+void GTree::updateWeight( Node* node, char qual ) {
 	double newWeight, curWeight = node->weight;
 	double pBQual = GTH::phredQuals[GTH::scoreSys][static_cast<int>( qual )];
 	do {
@@ -29,17 +29,17 @@ void GTreefReads::updateWeight( Node* node, char qual ) {
 	} while( !( node->weight.compare_exchange_weak( curWeight, newWeight ) ) );
 }
 
-void GTreefReads::updateWeightAndOccs( Node* node, char qual )
+void GTree::updateWeightAndOccs( Node* node, char qual )
 {
 	node->occs++;
 	updateWeight(node, qual);
 }
 
-void GTreefReads::createRoot( short ind )
+void GTree::createRoot( short ind )
 {
 	uint32_t i;
 	char qual;
-	root = &( nodes[head] );
+	root = &( dNodes[head] );
 	nNodes++;
 
 	for( i = 0; i < GTH::seqReads.size(); i++ ) {
@@ -62,14 +62,14 @@ void GTreefReads::createRoot( short ind )
 	}
 }
 
-void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int offset )
+void GTree::createNode( Node* node, short ind, char qual, uint64_t rN, int offset )
 {
 	omp_set_lock( &lock );
 	head++;
-	if( head == nodes.size() ) {
-		nodes.resize( nodes.size() + RES );
+	if( head == dNodes.size() ) {
+		dNodes.resize( dNodes.size() + RES );
 	}
-	node->subnodes[ind] = &( nodes[head] );
+	node->subnodes[ind] = &( dNodes[head] );
 	omp_unset_lock( &lock );
 	nNodes++;
 
@@ -84,7 +84,7 @@ void GTreefReads::createNode( Node* node, short ind, char qual, uint64_t rN, int
 }
 
 /** --------------- Read Processing ---------------- **/
-void GTreefReads::addReadOne( uint64_t readNum, short offset ) 
+void GTree::addReadOne( uint64_t readNum, short offset ) 
 {
 	//std::lock_guard<std::mutex> cncn(gtMut);
 	std::vector<Node*> paths;
@@ -134,7 +134,7 @@ void GTreefReads::addReadOne( uint64_t readNum, short offset )
 	paths.clear();
 }
 
-void GTreefReads::potAddNode(Node* node)
+void GTree::potAddNode(Node* node)
 {
 	int64_t rN = node->readNum;
 	SeqRead* tRead = &GTH::seqReads[rN];
@@ -149,7 +149,7 @@ void GTreefReads::potAddNode(Node* node)
 	createNode( node, ind, qual, rN, offset );
 }
 
-void GTreefReads::balanceNode( Node* node )
+void GTree::balanceNode( Node* node )
 {
 	// Get the offset and read before overiding/updating
 	int64_t lReadNum = node->readNum;
