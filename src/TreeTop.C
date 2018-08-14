@@ -93,27 +93,41 @@ void TreeTop::buildSequence()
 //}
 	}
 //}
-
 }
 
 /** ------------ Tree Reconstruction --------------- **/
-void TreeTop::reconstructTrees()
+signed int TreeTop::reconstructTrees()
 {
 	std::ifstream inFile( iFilename );
-	std::stringstream ss[NBASES];
-	std::string line;
+	if( !inFile.is_open() )
+		return IN_FILE_ERROR;
 
-	int i = 0;
-	while( std::getline( inFile, line ) ) {
-		ss[i / 2] << line;
-		if( !( i % 2 ) )
-			ss[i / 2] << '\n';
-		i++;
+	for(int i = 0; i < NBASES; i++) {
+		int64_t tmp64;
+		inFile.read( ( char* ) &tmp64, sizeof( int64_t ) );
+		std::cout << tmp64 << std::endl;
+		trees[i].resizeDeque( tmp64 );
 	}
 
-	for( int i = 0; i < NBASES; i++ ) {
-		trees[i].processSString( ss[i] );
-	}
+	//for(int i = 0; i < NBASES; i++) {
+	//	trees[i].writeDeque( inFile );
+	//}
+	//std::ifstream inFile( iFilename );
+	//std::string line;
+
+	//int i = 0;
+	//while( std::getline( inFile, line ) ) {
+	//	ss[i / 2] << line;
+	//	if( !( i % 2 ) )
+	//		ss[i / 2] << '\n';
+	//	i++;
+	//}
+
+	//for( int i = 0; i < NBASES; i++ ) {
+	//	trees[i].processSString( ss[i] );
+	//}
+	
+	return 0;
 }
 
 /** --------------- Read Processing ---------------- **/
@@ -144,10 +158,26 @@ void TreeTop::processReadsOne()
 }
 
 /** --------------- Misc Functions ----------------- **/
-void TreeTop::storeTrees()
+signed int TreeTop::storeTrees( std::string& sFilename )
 {
+	std::ofstream storeFile( sFilename, std::ios::binary );
+	if( !storeFile.is_open() )
+		return OUT_FILE_ERROR;
+
+	for( int i = 0; i < NBASES; i++ ) {
+		int64_t tmp64 = trees[i].getDNodeSize();
+		storeFile.write( ( char* ) &tmp64, sizeof( int64_t ) );
+	}
+
 	for( int i = 0; i < NBASES; i++ )
-		treeStrings[i] = trees[i].storeTree( i );
+		trees[i].writeTreeToFile( storeFile );
+
+	//for( int i = 0; i < NBASES; i++ )
+	//	treeStrings[i] = trees[i].storeTree( i );
+	
+	storeFile.close();
+
+	return 0;
 }
 
 void TreeTop::printTrees()

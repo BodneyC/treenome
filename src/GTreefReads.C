@@ -67,7 +67,7 @@ void GTree::createNode( Node* node, short ind, char qual, uint64_t rN, int offse
 {
 	omp_set_lock( &lock );
 	head++;
-	if( head == dNodes.size() ) {
+	if( ( unsigned ) head == dNodes.size() ) {
 		dNodes.resize( dNodes.size() + RES );
 	}
 	node->subnodes[ind] = &( dNodes[head] );

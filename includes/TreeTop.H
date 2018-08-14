@@ -13,8 +13,6 @@
 #ifndef _TREETOP_
 #define _TREETOP_
 
-#include <fstream>
-#include <sstream>
 #include "GTree.H"
 
 // Structure which holds read data and the four GTrees
@@ -29,12 +27,12 @@ public:
 	/* Common */
 	void buildSequence();
 	void printTrees();
-	void storeTrees();
+	signed int storeTrees( std::string& sFilename );
 	void printSequence();
 	/* FReads */
 	void processReadsOne();
 	/* FFile */
-	void reconstructTrees();
+	signed int reconstructTrees();
 	
 private:
 	std::string sequence;

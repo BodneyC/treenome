@@ -13,6 +13,18 @@
  *******************************************************************/
 #include "../includes/GTree.H"
 
+void GTree::resizeDeque( int64_t tmp64 )
+{
+	nNodes = tmp64;
+	dNodes.resize( nNodes );
+}
+
+void GTree::writeDeque( std::ifstream& inFile )
+{
+	inFile.read( ( char* ) &dNodes, nNodes * sizeof( Node ) );
+}
+
+
 void GTree::getNextNode( struct NodeInfo& nInf, std::stringstream& ss )
 {
 	std::string line;
@@ -34,12 +46,10 @@ void GTree::getNextNode( struct NodeInfo& nInf, std::stringstream& ss )
 
 void GTree::createNode( struct NodeInfo& nInf )
 {
-	for( int i = 0; i < nInf.comCnt; i++ ) {
-		//std::cout << tmpNode << std::endl;
+	for( int i = 0; i < nInf.comCnt; i++ )
 		tmpNode = tmpNode->parent;
-	}
 	
-	tmpNode->subnodes[nInf.ind] = &( vNodes[head] );
+	tmpNode->subnodes[nInf.ind] = &( dNodes[head] );
 	head++;
 
 	tmpNode->subnodes[nInf.ind]->parent = tmpNode;
@@ -53,7 +63,7 @@ void GTree::createRoot( std::stringstream& ss )
 {
 	struct NodeInfo nInf;
 	getNextNode( nInf, ss );
-	root = &( vNodes[0] );
+	root = &( dNodes[0] );
 	tmpNode = root;
 	head++;
 
@@ -67,7 +77,7 @@ void GTree::processSString( std::stringstream& ss )
 	std::getline( ss, line, '\n' );
 
 	nNodes = std::stol( line );
-	vNodes.resize( nNodes );
+	dNodes.resize( nNodes );
 
 	createRoot( ss );
 

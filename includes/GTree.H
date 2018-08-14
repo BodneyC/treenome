@@ -14,6 +14,7 @@
 #define _GTREE_
 
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <sstream>
 #include <vector>
@@ -22,6 +23,11 @@
 #include "SeqRead.H"
 #include "Node.H"
 #include "Phred33.H"
+
+#define USAGE_ERROR -1
+#define IN_FILE_ERROR -2
+#define OUT_FILE_ERROR -3
+#define THREAD_ERROR -4
 
 #define RES 1000
 
@@ -54,18 +60,22 @@ public:
 	~GTree() {  }
 
 	/* Sequence creation functions */
-	void addToSeq( uint64_t offset, std::string &sequence );
-	void followPath( Node* node, short ind, std::string &sequence );
+	void addToSeq( uint64_t offset, std::string& sequence );
+	void followPath( Node* node, short ind, std::string& sequence );
 	/* Usefull non-essential */
 	Node* getRoot();
+	int64_t getDNodeSize();
 	void printAllPaths( short label );
 	std::string storeTree( short label );
+	void writeTreeToFile( std::ofstream& storeFile );
 	/* Tree creation functions */
 	void init();
 	void createRoot( short ind );
 	void addReadOne( uint64_t readNum, short offset ); 
 	void balanceNode( Node* node );
 	/* Tree Recreation Functions */
+	void resizeDeque( int64_t tmp64 );
+	void writeDeque( std::ifstream& inFile );
 	void processSString( std::stringstream& ss );
 private:
 	Node* root;

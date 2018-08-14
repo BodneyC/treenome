@@ -22,10 +22,6 @@
 #include "../includes/InputFile.H"
 #include "../includes/TreeTop.H"
 
-#define USAGE_ERROR -1
-#define IN_FILE_ERROR -2
-#define THREAD_ERROR -3
-
 struct CMDArgs {
 	std::string fFilename, sFilename, lFilename;
 	bool printToScreen, storeToFile, loadFile;
@@ -125,11 +121,8 @@ TreeTop* createTreeFromReads( struct CMDArgs& argList )
 
 	TreeTop* treeTop = new TreeTop;
 	treeTop->processReadsOne();
+
 	std::cout << "\n----------" << std::endl;
-	if( argList.storeToFile ) {
-		treeTop->storeTrees();
-		writeTreesToDisk( argList.sFilename, treeTop );
-	}
 
 	return treeTop;
 }
@@ -138,8 +131,6 @@ TreeTop* loadTreeFromFile( struct CMDArgs& argList )
 {
 	TreeTop* treeTop = new TreeTop( argList.lFilename );
 	treeTop->reconstructTrees();
-	if( argList.printToScreen )
-		treeTop->printTrees();
 
 	return treeTop;
 }
@@ -165,8 +156,8 @@ int main( int argc, char** argv )
 	}
 
 	omp_set_num_threads( NUM_THREADS );
-
-	std::cout << "Number of threads in use: " << NUM_THREADS << std::endl;
+	if( NUM_THREADS > 1 )
+		std::cout << "Number of threads in use: " << NUM_THREADS << std::endl;
 
 	TreeTop* treeTop;
 	if( argList.loadFile ) {
@@ -178,12 +169,21 @@ int main( int argc, char** argv )
 	if( !treeTop )
 		return FILE_ERROR;
 
+	if( argList.storeToFile ) {
+		progFail = treeTop->storeTrees( argList.sFilename );
+		//writeTreesToDisk( argList.sFilename, treeTop );
+		if( progFail )
+			return progFail;
+	}
+
 	treeTop->buildSequence();
 
 	if( argList.printToScreen ) {
 		treeTop->printTrees();
 		treeTop->printSequence();
 	}
+
+	delete treeTop;
 
 	return 0;
 }

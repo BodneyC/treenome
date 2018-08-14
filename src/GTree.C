@@ -82,6 +82,11 @@ Node* GTree::getRoot()
 		return nullptr; 
 }
 
+int64_t GTree::getDNodeSize()
+{
+	return dNodes.size();
+}
+
 short GTree::countChildren( Node* node )
 {
 	short children = 0;
@@ -160,6 +165,12 @@ void GTree::addToSeq( uint64_t offset, std::string &sequence )
 }
 
 /** ---------------- Tree Storage ------------------ **/
+void GTree::writeTreeToFile( std::ofstream& storeFile )
+{
+	for( int64_t i = 0; i < dNodes.size(); i++ )
+		storeFile.write( ( char* )&dNodes[i], sizeof( Node ) );
+}
+
 std::string GTree::storeTree( short label ) {
 	treeString += GTH::valToString( nNodes ) + '\n';
 	std::string val[2] = {
