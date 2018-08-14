@@ -106,49 +106,42 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 	return 0;
 }
 
-void writeTreesToDisk( std::string sFilename, TreeTop& treeTop )
+void writeTreesToDisk( std::string sFilename, TreeTop* treeTop )
 {
 	std::ofstream outFile( sFilename );
 	for( int i = 0; i < NBASES; i++ )
-		outFile << treeTop.treeStrings[i].c_str() << std::endl;
+		outFile << treeTop->treeStrings[i].c_str() << std::endl;
 }
 
-signed int createTreeFromReads( struct CMDArgs& argList )
+TreeTop* createTreeFromReads( struct CMDArgs& argList )
 {
 	InputFile inpFile( argList.fFilename, argList.phredBase );
 	if( !inpFile.readFastQ() ) {
 		std::cout << "[ERR]: Input file could not be opened" << std::endl;
-		return FILE_ERROR;
+		return nullptr;
 	} else {
 		std::cout << inpFile.nReads << " records found\n" << std::endl;
 	}
 
-	TreeTop treeTop;
-	treeTop.processReadsOne();
+	TreeTop* treeTop = new TreeTop;
+	treeTop->processReadsOne();
 	std::cout << "\n----------" << std::endl;
-	if( argList.printToScreen )
-		treeTop.printTrees();
 	if( argList.storeToFile ) {
-		treeTop.storeTrees();
+		treeTop->storeTrees();
 		writeTreesToDisk( argList.sFilename, treeTop );
 	}
 
-	treeTop.buildSequence();
-	treeTop.printSequence();
-	
-	//std::getchar();
-
-	return 0;
+	return treeTop;
 }
 
-signed int loadTreeFromFile( struct CMDArgs& argList )
+TreeTop* loadTreeFromFile( struct CMDArgs& argList )
 {
-	TreeTop treeTop( argList.lFilename );
-	treeTop.reconstructTrees();
+	TreeTop* treeTop = new TreeTop( argList.lFilename );
+	treeTop->reconstructTrees();
 	if( argList.printToScreen )
-		treeTop.printTrees();
+		treeTop->printTrees();
 
-	return 0;
+	return treeTop;
 }
 
 int main( int argc, char** argv )
@@ -175,13 +168,22 @@ int main( int argc, char** argv )
 
 	std::cout << "Number of threads in use: " << NUM_THREADS << std::endl;
 
+	TreeTop* treeTop;
 	if( argList.loadFile ) {
-		progFail = loadTreeFromFile( argList );
+		treeTop = loadTreeFromFile( argList );
 	} else {
-		progFail = createTreeFromReads( argList );
+		treeTop = createTreeFromReads( argList );
 	}
-	if( progFail )
-		return progFail;
+
+	if( !treeTop )
+		return FILE_ERROR;
+
+	treeTop->buildSequence();
+
+	if( argList.printToScreen ) {
+		treeTop->printTrees();
+		treeTop->printSequence();
+	}
 
 	return 0;
 }

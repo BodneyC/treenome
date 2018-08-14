@@ -96,32 +96,6 @@ void TreeTop::buildSequence()
 
 }
 
-/** --------------- Misc Functions ----------------- **/
-void TreeTop::storeTrees()
-{
-	for( int i = 0; i < NBASES; i++ )
-		treeStrings[i] = trees[i].storeTree( i );
-}
-
-void TreeTop::printTrees()
-{
-	for( int i = 0; i < NBASES; i++ )
-		trees[i].printAllPaths( i );
-}
-
-void TreeTop::printSequence()
-{
-	// 80 for terminal width's sake
-	unsigned short TWIDTH = 120;
-	uint64_t i = 0;
-
-	if( sequence.length() > TWIDTH )
-		for( ; i < sequence.length() - TWIDTH; i += TWIDTH )
-			std::cout << sequence.substr( i, TWIDTH ) << std::endl;
-
-	std::cout << sequence.substr( i, sequence.length() - i ) << std::endl;
-}
-
 /** ------------ Tree Reconstruction --------------- **/
 void TreeTop::reconstructTrees()
 {
@@ -160,17 +134,38 @@ void TreeTop::processReadsOne()
 
 #pragma omp parallel num_threads( NUM_THREADS )
 {
-	//for( uint64_t i = 0; i < GTH::seqReads.size(); i += NUM_THREADS ) {
 	for( uint64_t i = 0; i < GTH::seqReads.size(); i += NUM_THREADS ) {
-//#pragma omp single
-//{
-//	std::cout << "READ: " << i << std::endl;
-//}
-#pragma omp for schedule( static, 1 )
-	for( int j = 0; j < NUM_THREADS; j++ ) 
-		if( i + j < GTH::seqReads.size() )
-			threadFunc( i + j );
+	#pragma omp for schedule( static, 1 )
+		for( int j = 0; j < NUM_THREADS; j++ ) 
+			if( i + j < GTH::seqReads.size() )
+				threadFunc( i + j );
 	}
 }
+}
+
+/** --------------- Misc Functions ----------------- **/
+void TreeTop::storeTrees()
+{
+	for( int i = 0; i < NBASES; i++ )
+		treeStrings[i] = trees[i].storeTree( i );
+}
+
+void TreeTop::printTrees()
+{
+	for( int i = 0; i < NBASES; i++ )
+		trees[i].printAllPaths( i );
+}
+
+void TreeTop::printSequence()
+{
+	// 80 for terminal width's sake
+	unsigned short TWIDTH = 120;
+	uint64_t i = 0;
+
+	if( sequence.length() > TWIDTH )
+		for( ; i < sequence.length() - TWIDTH; i += TWIDTH )
+			std::cout << sequence.substr( i, TWIDTH ) << std::endl;
+
+	std::cout << sequence.substr( i, sequence.length() - i ) << std::endl;
 }
 

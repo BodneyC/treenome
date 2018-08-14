@@ -20,6 +20,7 @@ void GTree::init() {
 	omp_init_lock( &lock );
 	dNodes.resize( RES );
 }
+
 /** ---------------- Tree Creation ----------------- **/
 void GTree::updateWeight( Node* node, char qual ) {
 	double newWeight, curWeight = node->weight;
@@ -93,6 +94,7 @@ void GTree::addReadOne( uint64_t readNum, short offset )
 	SeqRead* read = &GTH::seqReads[readNum];
 	bool returnBool = 0, updateBool = 0;
 
+	// Edge case
 	if( root->offset == offset && ( uint64_t )root->readNum == readNum )
 		return;
 
