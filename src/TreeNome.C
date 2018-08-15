@@ -176,12 +176,12 @@ int main( int argc, char** argv )
 			return progFail;
 	}
 
-	treeTop->buildSequence();
-
 	if( argList.printToScreen ) {
 		treeTop->printTrees();
-		treeTop->printSequence();
 	}
+
+	treeTop->buildSequence();
+	treeTop->printSequence();
 
 	delete treeTop;
 
