@@ -134,7 +134,7 @@ void GTree::followPath( Node* node, short ind, std::string &sequence )
 }
 
 /** --------------- Genome Creation ---------------- **/
-void GTree::addToSeq( uint64_t offset, std::string &sequence )
+void GTree::addToSeq( uint32_t offset, std::string &sequence )
 {
 	Node* node = root;
 	short ind = 0;
@@ -252,7 +252,7 @@ void GTree::createRoot( short ind )
 	}
 }
 
-void GTree::createNode( Node* node, short ind, char qual, uint64_t rN, int offset )
+void GTree::createNode( Node* node, short ind, char qual, uint32_t rN, int offset )
 {
 	omp_set_lock( &lock );
 	head++;
@@ -274,7 +274,7 @@ void GTree::createNode( Node* node, short ind, char qual, uint64_t rN, int offse
 }
 
 /** --------------- Read Processing ---------------- **/
-void GTree::addReadOne( uint64_t readNum, short offset ) 
+void GTree::addReadOne( uint32_t readNum, short offset ) 
 {
 	//std::lock_guard<std::mutex> cncn(gtMut);
 	std::vector<Node*> paths;
@@ -284,7 +284,7 @@ void GTree::addReadOne( uint64_t readNum, short offset )
 	bool returnBool = 0, updateBool = 0;
 
 	// Edge case
-	if( root->offset == offset && ( uint64_t )root->readNum == readNum )
+	if( root->offset == offset && ( uint32_t )root->readNum == readNum )
 		return;
 
 	for( int i = offset + 1; i < GTH::seqReads[readNum].size(); i++ ) {
@@ -327,7 +327,7 @@ void GTree::addReadOne( uint64_t readNum, short offset )
 
 void GTree::potAddNode(Node* node)
 {
-	int64_t rN = node->readNum;
+	int32_t rN = node->readNum;
 	SeqRead* tRead = &GTH::seqReads[rN];
 	short offset = node->offset + 1;
 
@@ -343,7 +343,7 @@ void GTree::potAddNode(Node* node)
 void GTree::balanceNode( Node* node )
 {
 	// Get the offset and read before overiding/updating
-	int64_t lReadNum = node->readNum;
+	int32_t lReadNum = node->readNum;
 	SeqRead* lRead = &GTH::seqReads[lReadNum];
 	short lOffset = node->offset + 1;
 	bool clearBool = 0;
@@ -370,7 +370,7 @@ void GTree::balanceNode( Node* node )
 	updateWeightAndOccs(node, lQual);
 
 	// If the paths follow the same route:
-	int64_t rReadNum = node->readNum;
+	int32_t rReadNum = node->readNum;
 	SeqRead* rRead = &GTH::seqReads[rReadNum];
 	short rOffset = node->offset + 1;
 	lOffset++;

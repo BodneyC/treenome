@@ -60,7 +60,7 @@ public:
 	~GTree() {  }
 
 	/* Sequence creation functions */
-	void addToSeq( uint64_t offset, std::string& sequence );
+	void addToSeq( uint32_t offset, std::string& sequence );
 	void followPath( Node* node, short ind, std::string& sequence );
 	/* Usefull non-essential */
 	Node* getRoot();
@@ -71,7 +71,7 @@ public:
 	/* Tree creation functions */
 	void init();
 	void createRoot( short ind );
-	void addReadOne( uint64_t readNum, short offset ); 
+	void addReadOne( uint32_t readNum, short offset ); 
 	void balanceNode( Node* node );
 	/* Tree Recreation Functions */
 	void resizeDeque( int64_t tmp64 );
@@ -94,7 +94,7 @@ private:
 	void potAddNode( Node* node );
 	void updateWeight( Node* node, char qual );
 	void updateWeightAndOccs( Node* node, char qual );
-	void createNode( Node* node, short label, char qual, uint64_t rN, int offset );
+	void createNode( Node* node, short label, char qual, uint32_t rN, int offset );
 	/* Tree Recreation Functions */
 	void createRoot( std::stringstream& ss );
 	void createNode( struct NodeInfo& nInf );

@@ -30,7 +30,7 @@ typedef struct Node {
 	std::atomic<int32_t> endCnt;
 	omp_lock_t lock;
 	short offset;
-	int64_t readNum;
+	int32_t readNum;
 	Node* subnodes[NBASES];
 	// TMP
 	Node* parent;
