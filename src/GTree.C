@@ -164,43 +164,6 @@ void GTree::addToSeq( uint64_t offset, std::string &sequence )
 	}
 }
 
-/** ---------------- Tree Storage ------------------ **/
-void GTree::writeTreeToFile( std::ofstream& storeFile )
-{
-	for( uint64_t i = 0; i < dNodes.size(); i++ )
-		storeFile.write( ( char* )&dNodes[i], sizeof( Node ) );
-}
-
-std::string GTree::storeTree( short label ) {
-	treeString += GTH::valToString( nNodes ) + '\n';
-	std::string val[2] = {
-		GTH::valToString( root->occs ),
-		GTH::valToString( root->weight )
-	};
-	GTH::removeDoubleEnding( val[1] );
-	treeString += GTH::retLabel( label );
-	treeString += ':' + val[0] + ':' + val[1] + ';';
-	storeTree( root );
-	return treeString;
-}
-
-void GTree::storeTree( Node* node )
-{
-	for( int i = 0; i < NBASES; i++ ) {
-		if( node->subnodes[i] ) {
-			treeString += GTH::retLabel( i );
-			std::string val[2] = {
-				GTH::valToString( dNodes[node->subnodes[i]].occs ),
-				GTH::valToString( dNodes[node->subnodes[i]].weight )
-			};
-			GTH::removeDoubleEnding( val[1] );
-			treeString += ':' + val[0] + ':' + val[1] + ';';
-			storeTree( &dNodes[node->subnodes[i]] );
-		}
-	}
-	treeString += ',';
-}
-
 /** --------------- Tree from Reads ---------------- **/
 void GTree::init() {
 	// Because reallocation of std::vectors is assured if its class is a 
@@ -422,6 +385,43 @@ void GTree::balanceNode( Node* node )
 	return;
 }
 
+/** ---------------- Tree Storage ------------------ **/
+void GTree::writeTreeToFile( std::ofstream& storeFile )
+{
+	for( uint64_t i = 0; i < dNodes.size(); i++ )
+		storeFile.write( ( char* )&dNodes[i], sizeof( Node ) );
+}
+
+//std::string GTree::storeTree( short label ) {
+//	treeString += GTH::valToString( nNodes ) + '\n';
+//	std::string val[2] = {
+//		GTH::valToString( root->occs ),
+//		GTH::valToString( root->weight )
+//	};
+//	GTH::removeDoubleEnding( val[1] );
+//	treeString += GTH::retLabel( label );
+//	treeString += ':' + val[0] + ':' + val[1] + ';';
+//	storeTree( root );
+//	return treeString;
+//}
+//
+//void GTree::storeTree( Node* node )
+//{
+//	for( int i = 0; i < NBASES; i++ ) {
+//		if( node->subnodes[i] ) {
+//			treeString += GTH::retLabel( i );
+//			std::string val[2] = {
+//				GTH::valToString( dNodes[node->subnodes[i]].occs ),
+//				GTH::valToString( dNodes[node->subnodes[i]].weight )
+//			};
+//			GTH::removeDoubleEnding( val[1] );
+//			treeString += ':' + val[0] + ':' + val[1] + ';';
+//			storeTree( &dNodes[node->subnodes[i]] );
+//		}
+//	}
+//	treeString += ',';
+//}
+
 /** --------------- Tree From File ----------------- **/
 void GTree::resizeDeque( int64_t tmp64 )
 {
@@ -435,24 +435,24 @@ void GTree::writeDeque( std::ifstream& inFile )
 }
 
 
-void GTree::getNextNode( struct NodeInfo& nInf, std::stringstream& ss )
-{
-	std::string line;
-	char tmpChar;
-	while( 1 ) {
-		if( !(ss >> tmpChar) )
-			return;
-		if( tmpChar != ',' )
-			break;
-		nInf.comCnt++;
-	}
-	nInf.ind = BASE_IND( tmpChar );
-	ss >> tmpChar;
-	std::getline( ss, line, ':' );
-	nInf.occs = std::stol( line );
-	std::getline( ss, line, ';' );
-	nInf.weight = std::stod( line );
-}
+//void GTree::getNextNode( struct NodeInfo& nInf, std::stringstream& ss )
+//{
+//	std::string line;
+//	char tmpChar;
+//	while( 1 ) {
+//		if( !(ss >> tmpChar) )
+//			return;
+//		if( tmpChar != ',' )
+//			break;
+//		nInf.comCnt++;
+//	}
+//	nInf.ind = BASE_IND( tmpChar );
+//	ss >> tmpChar;
+//	std::getline( ss, line, ':' );
+//	nInf.occs = std::stol( line );
+//	std::getline( ss, line, ';' );
+//	nInf.weight = std::stod( line );
+//}
 
 //void GTree::createNode( struct NodeInfo& nInf )
 //{

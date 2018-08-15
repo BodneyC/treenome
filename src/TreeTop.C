@@ -81,7 +81,7 @@ void TreeTop::buildSequence()
 		// ( this would actually be the k-mer match )
 //#pragma omp single
 //{
-		if( offset == sequence.length() - MER_LEN ) {
+		if( offset >= sequence.length() - MER_LEN ) {
 			sequence += 'N';
 			maxPath();
 			offset += MER_LEN + 1;

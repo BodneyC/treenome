@@ -43,6 +43,6 @@ Node& Node::operator=( const Node& tmpNode )
 
 double Node::getRatio()
 {
-	return weight / static_cast<double>( occs );
+	return weight.load() / static_cast<double>( occs.load() );
 }
 
