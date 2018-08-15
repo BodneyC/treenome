@@ -56,7 +56,9 @@ struct NodeInfo {
 // GTree class used in construction and destruction of tree
 class GTree {
 public:
-	GTree();
+	GTree(): root( nullptr ), head( 0 ), nNodes( 0 ), 
+		basePaths( "" ), occuPaths( "" ), treeString( "" ),
+		tmpNode( nullptr ) {  }
 	~GTree() {  }
 
 	/* Sequence creation functions */
@@ -71,7 +73,7 @@ public:
 	/* Tree creation functions */
 	void init();
 	void createRoot( short ind );
-	void addReadOne( uint64_t readNum, short offset ); 
+	void addReadOne( uint32_t readNum, short offset ); 
 	void balanceNode( Node* node );
 	/* Tree Recreation Functions */
 	void resizeDeque( int64_t tmp64 );
@@ -83,7 +85,6 @@ private:
 	std::string basePaths, occuPaths, treeString;
 	omp_lock_t lock;
 	std::deque< Node > dNodes;
-	std::vector< Node > vNodes;
 	// TMP
 	Node* tmpNode;
 

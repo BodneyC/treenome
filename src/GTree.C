@@ -65,14 +65,6 @@ namespace GTH {
 	}
 }
 
-/** ------------- GTree Cons and Dees -------------- **/
-GTree::GTree(): 
-	root( nullptr ), head( 0 ), nNodes( 0 ), 
-	basePaths( "" ), occuPaths( "" ), treeString( "" ),
-	tmpNode( nullptr )
-{ 
-}
-
 /** ------------- - Helper Functions --------------- **/
 Node* GTree::getRoot()
 {
@@ -232,12 +224,10 @@ void GTree::createNode( Node* node, short ind, char qual, uint64_t rN, int offse
 	tmpNode->offset = offset;
 	tmpNode->weight = GTH::phredQuals[GTH::scoreSys][static_cast<int>( qual )];
 	tmpNode->occs = 1;
-	for( int i = 0; i < NBASES; i++ )
-		tmpNode->subnodes[i] = 0;
 }
 
 /** --------------- Read Processing ---------------- **/
-void GTree::addReadOne( uint64_t readNum, short offset ) 
+void GTree::addReadOne( uint32_t readNum, short offset ) 
 {
 	//std::lock_guard<std::mutex> cncn(gtMut);
 	std::vector<Node*> paths;
@@ -247,7 +237,7 @@ void GTree::addReadOne( uint64_t readNum, short offset )
 	bool returnBool = 0, updateBool = 0;
 
 	// Edge case
-	if( root->offset == offset && ( uint64_t )root->readNum == readNum )
+	if( root->offset == offset && ( uint32_t )root->readNum == readNum )
 		return;
 
 	for( int i = offset + 1; i < GTH::seqReads[readNum].size(); i++ ) {
@@ -289,25 +279,10 @@ void GTree::addReadOne( uint64_t readNum, short offset )
 	paths.clear();
 }
 
-void GTree::potAddNode(Node* node)
-{
-	int64_t rN = node->readNum;
-	SeqRead* tRead = &GTH::seqReads[rN];
-	short offset = node->offset + 1;
-
-	if( offset == ( *tRead ).size() )
-		return;
-
-	short ind = ( *tRead ).getBaseInd( offset );
-	char qual = ( *tRead ).getQual( offset );
-
-	createNode( node, ind, qual, rN, offset );
-}
-
 void GTree::balanceNode( Node* node )
 {
 	// Get the offset and read before overiding/updating
-	int64_t lReadNum = node->readNum;
+	int32_t lReadNum = node->readNum;
 	SeqRead* lRead = &GTH::seqReads[lReadNum];
 	short lOffset = node->offset + 1;
 	bool clearBool = 0;
@@ -334,7 +309,7 @@ void GTree::balanceNode( Node* node )
 	updateWeightAndOccs(node, lQual);
 
 	// If the paths follow the same route:
-	int64_t rReadNum = node->readNum;
+	int32_t rReadNum = node->readNum;
 	SeqRead* rRead = &GTH::seqReads[rReadNum];
 	short rOffset = node->offset + 1;
 	lOffset++;
@@ -385,42 +360,27 @@ void GTree::balanceNode( Node* node )
 	return;
 }
 
+void GTree::potAddNode(Node* node)
+{
+	int32_t rN = node->readNum;
+	SeqRead* tRead = &GTH::seqReads[rN];
+	short offset = node->offset + 1;
+
+	if( offset == ( *tRead ).size() )
+		return;
+
+	short ind = ( *tRead ).getBaseInd( offset );
+	char qual = ( *tRead ).getQual( offset );
+
+	createNode( node, ind, qual, rN, offset );
+}
+
 /** ---------------- Tree Storage ------------------ **/
 void GTree::writeTreeToFile( std::ofstream& storeFile )
 {
 	for( uint64_t i = 0; i < dNodes.size(); i++ )
 		storeFile.write( ( char* )&dNodes[i], sizeof( Node ) );
 }
-
-//std::string GTree::storeTree( short label ) {
-//	treeString += GTH::valToString( nNodes ) + '\n';
-//	std::string val[2] = {
-//		GTH::valToString( root->occs ),
-//		GTH::valToString( root->weight )
-//	};
-//	GTH::removeDoubleEnding( val[1] );
-//	treeString += GTH::retLabel( label );
-//	treeString += ':' + val[0] + ':' + val[1] + ';';
-//	storeTree( root );
-//	return treeString;
-//}
-//
-//void GTree::storeTree( Node* node )
-//{
-//	for( int i = 0; i < NBASES; i++ ) {
-//		if( node->subnodes[i] ) {
-//			treeString += GTH::retLabel( i );
-//			std::string val[2] = {
-//				GTH::valToString( dNodes[node->subnodes[i]].occs ),
-//				GTH::valToString( dNodes[node->subnodes[i]].weight )
-//			};
-//			GTH::removeDoubleEnding( val[1] );
-//			treeString += ':' + val[0] + ':' + val[1] + ';';
-//			storeTree( &dNodes[node->subnodes[i]] );
-//		}
-//	}
-//	treeString += ',';
-//}
 
 /** --------------- Tree From File ----------------- **/
 void GTree::resizeDeque( int64_t tmp64 )
@@ -432,71 +392,8 @@ void GTree::resizeDeque( int64_t tmp64 )
 void GTree::writeDeque( std::ifstream& inFile )
 {
 	inFile.read( ( char* ) &dNodes, nNodes * sizeof( Node ) );
+	root = &dNodes[0];
 }
-
-
-//void GTree::getNextNode( struct NodeInfo& nInf, std::stringstream& ss )
-//{
-//	std::string line;
-//	char tmpChar;
-//	while( 1 ) {
-//		if( !(ss >> tmpChar) )
-//			return;
-//		if( tmpChar != ',' )
-//			break;
-//		nInf.comCnt++;
-//	}
-//	nInf.ind = BASE_IND( tmpChar );
-//	ss >> tmpChar;
-//	std::getline( ss, line, ':' );
-//	nInf.occs = std::stol( line );
-//	std::getline( ss, line, ';' );
-//	nInf.weight = std::stod( line );
-//}
-
-//void GTree::createNode( struct NodeInfo& nInf )
-//{
-//	for( int i = 0; i < nInf.comCnt; i++ )
-//		tmpNode = tmpNode->parent;
-//	
-//	tmpNode->subnodes[nInf.ind] = &( dNodes[head] );
-//	head++;
-//
-//	tmpNode->subnodes[nInf.ind]->parent = tmpNode;
-//	tmpNode = tmpNode->subnodes[nInf.ind];
-//
-//	tmpNode->occs = nInf.occs;
-//	tmpNode->weight = nInf.weight;
-//}
-//
-//void GTree::createRoot( std::stringstream& ss )
-//{
-//	struct NodeInfo nInf;
-//	getNextNode( nInf, ss );
-//	root = &( dNodes[0] );
-//	tmpNode = root;
-//	head++;
-//
-//	tmpNode->occs = nInf.occs;
-//	tmpNode->weight = nInf.weight;
-//}
-//
-//void GTree::processSString( std::stringstream& ss )
-//{
-//	std::string line;
-//	std::getline( ss, line, '\n' );
-//
-//	nNodes = std::stol( line );
-//	dNodes.resize( nNodes );
-//
-//	createRoot( ss );
-//
-//	for( unsigned int i = 0; i < nNodes - 1; i++ ) {
-//		struct NodeInfo nInf;
-//		getNextNode( nInf, ss );
-//		createNode( nInf );
-//	}
-//}
 
 /** ---------------- Path Printing ----------------- **/
 void GTree::printAllPaths( short label ) { 

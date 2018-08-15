@@ -180,8 +180,9 @@ int main( int argc, char** argv )
 
 	if( argList.printToScreen ) {
 		treeTop->printTrees();
-		treeTop->printSequence();
 	}
+
+	treeTop->printSequence();
 
 	delete treeTop;
 
