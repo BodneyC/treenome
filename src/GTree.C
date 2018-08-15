@@ -105,7 +105,7 @@ signed short GTree::highestThresh( Node* node )
 	double maxRat = GTH::thresh;
 
 	for( short i = 0; i < NBASES; i++ ) {
-		Node* tmpNode = node->subnodes[i];
+		Node* tmpNode = &dNodes[node->subnodes[i]];
 		if( tmpNode && tmpNode->occs ) {
 			double curRat = tmpNode->getRatio();
 			if( curRat > maxRat ) {
@@ -129,7 +129,7 @@ void GTree::followPath( Node* node, short ind, std::string &sequence )
 		node->weight = node->weight.load() - 1;
 		if( ind == -1 )
 			return;
-		node = node->subnodes[ind];
+		node = &dNodes[node->subnodes[ind]];
 	} while( children );
 }
 
@@ -143,9 +143,9 @@ void GTree::addToSeq( uint64_t offset, std::string &sequence )
 	// End of current sequence	
 	for( uint32_t i = offset + 1; i < sequence.length(); i++ ) {
 		ind = BASE_IND( sequence[i] );
-		if( node->subnodes[ind] && countChildren( node->subnodes[ind] ) ) {
+		if( node->subnodes[ind] && countChildren( &dNodes[node->subnodes[ind]] ) ) {
 			nPath.push_back( node );
-			node = node->subnodes[ind];
+			node = &dNodes[node->subnodes[ind]];
 		} else {
 			return;
 		}
@@ -153,7 +153,7 @@ void GTree::addToSeq( uint64_t offset, std::string &sequence )
 
 	ind = highestThresh( node );
 	if( ind != -1 ) {
-		followPath( node->subnodes[ind], ind, sequence );
+		followPath( &dNodes[node->subnodes[ind]], ind, sequence );
 		
 		// Only if something is contributed to the sequence should the 
 		// occurences be lowered
@@ -167,7 +167,7 @@ void GTree::addToSeq( uint64_t offset, std::string &sequence )
 /** ---------------- Tree Storage ------------------ **/
 void GTree::writeTreeToFile( std::ofstream& storeFile )
 {
-	for( int64_t i = 0; i < dNodes.size(); i++ )
+	for( uint64_t i = 0; i < dNodes.size(); i++ )
 		storeFile.write( ( char* )&dNodes[i], sizeof( Node ) );
 }
 
@@ -190,12 +190,12 @@ void GTree::storeTree( Node* node )
 		if( node->subnodes[i] ) {
 			treeString += GTH::retLabel( i );
 			std::string val[2] = {
-				GTH::valToString( node->subnodes[i]->occs ),
-				GTH::valToString( node->subnodes[i]->weight )
+				GTH::valToString( dNodes[node->subnodes[i]].occs ),
+				GTH::valToString( dNodes[node->subnodes[i]].weight )
 			};
 			GTH::removeDoubleEnding( val[1] );
 			treeString += ':' + val[0] + ':' + val[1] + ';';
-			storeTree( node->subnodes[i] );
+			storeTree( &dNodes[node->subnodes[i]] );
 		}
 	}
 	treeString += ',';
@@ -259,18 +259,18 @@ void GTree::createNode( Node* node, short ind, char qual, uint64_t rN, int offse
 	if( ( unsigned ) head == dNodes.size() ) {
 		dNodes.resize( dNodes.size() + RES );
 	}
-	node->subnodes[ind] = &( dNodes[head] );
+	node->subnodes[ind] = head;
 	omp_unset_lock( &lock );
 	nNodes++;
 
 	// Doesn't set occs as addRead...() will do that
-	Node* tmpNode = node->subnodes[ind];
+	Node* tmpNode = &dNodes[node->subnodes[ind]];
 	tmpNode->readNum = rN;
 	tmpNode->offset = offset;
 	tmpNode->weight = GTH::phredQuals[GTH::scoreSys][static_cast<int>( qual )];
 	tmpNode->occs = 1;
 	for( int i = 0; i < NBASES; i++ )
-		tmpNode->subnodes[i] = nullptr;
+		tmpNode->subnodes[i] = 0;
 }
 
 /** --------------- Read Processing ---------------- **/
@@ -292,7 +292,8 @@ void GTree::addReadOne( uint64_t readNum, short offset )
 		paths.push_back( node );
 
 		omp_set_lock( &node->lock );
-		if( !node->subnodes[ind] ) {
+		int32_t nextNodeLoc = node->subnodes[ind];
+		if( !nextNodeLoc ) {
 			//std::cout << ( *read ).getQual( i ) << std::endl;
 			createNode( node, ind, ( *read ).getQual( i ), readNum, i );
 			returnBool = updateBool = 1;
@@ -305,11 +306,11 @@ void GTree::addReadOne( uint64_t readNum, short offset )
 			// If the end is reached, they still count as occurrences of the path...
 			updateBool = 1;
 			// If a subnode exists and it wasn't created above
-			if( node->subnodes[ind] && !returnBool)
-				paths.push_back( node->subnodes[ind] );
+			if( nextNodeLoc && !returnBool)
+				paths.push_back( &dNodes[nextNodeLoc] );
 			// For balancing purposes
-			if( node->subnodes[ind] && !countChildren( node->subnodes[ind]) )
-				potAddNode( node->subnodes[ind] );
+			if( nextNodeLoc && !countChildren( &dNodes[nextNodeLoc]) )
+				potAddNode( &dNodes[nextNodeLoc] );
 		}
 		omp_unset_lock( &node->lock );
 
@@ -320,7 +321,7 @@ void GTree::addReadOne( uint64_t readNum, short offset )
 		if( returnBool )
 			break;
 
-		node = node->subnodes[ind];
+		node = &dNodes[nextNodeLoc];
 	}
 	paths.clear();
 }
@@ -357,8 +358,8 @@ void GTree::balanceNode( Node* node )
 	char lQual = ( *lRead ).getQual( lOffset );
 	
 	if(node->subnodes[lInd] && 
-			lOffset == node->subnodes[lInd]->offset && 
-			lReadNum == node->subnodes[lInd]->readNum)
+			lOffset == dNodes[node->subnodes[lInd]].offset && 
+			lReadNum == dNodes[node->subnodes[lInd]].readNum)
 		return;
 
 	// If the paths are different:
@@ -366,7 +367,7 @@ void GTree::balanceNode( Node* node )
 		createNode( node, lInd, lQual, lReadNum, lOffset );
 		return;
 	}
-	node = node->subnodes[lInd];
+	node = &dNodes[node->subnodes[lInd]];
 	updateWeightAndOccs(node, lQual);
 
 	// If the paths follow the same route:
@@ -393,7 +394,7 @@ void GTree::balanceNode( Node* node )
 	// Update to the end of shared bases
 	for( unsigned short i = 0; i < lIndPath.size() - clearBool; i++ ) {
 		createNode( node, lIndPath[i], ( *lRead ).getQual( tmpLOffset ), lReadNum, tmpLOffset );
-		node = node->subnodes[lIndPath[i]];
+		node = &dNodes[node->subnodes[lIndPath[i]]];
 		updateWeightAndOccs( node, ( *rRead ).getQual( tmpROffset ) );
 		tmpLOffset++;
 		tmpROffset++;
@@ -453,49 +454,49 @@ void GTree::getNextNode( struct NodeInfo& nInf, std::stringstream& ss )
 	nInf.weight = std::stod( line );
 }
 
-void GTree::createNode( struct NodeInfo& nInf )
-{
-	for( int i = 0; i < nInf.comCnt; i++ )
-		tmpNode = tmpNode->parent;
-	
-	tmpNode->subnodes[nInf.ind] = &( dNodes[head] );
-	head++;
-
-	tmpNode->subnodes[nInf.ind]->parent = tmpNode;
-	tmpNode = tmpNode->subnodes[nInf.ind];
-
-	tmpNode->occs = nInf.occs;
-	tmpNode->weight = nInf.weight;
-}
-
-void GTree::createRoot( std::stringstream& ss )
-{
-	struct NodeInfo nInf;
-	getNextNode( nInf, ss );
-	root = &( dNodes[0] );
-	tmpNode = root;
-	head++;
-
-	tmpNode->occs = nInf.occs;
-	tmpNode->weight = nInf.weight;
-}
-
-void GTree::processSString( std::stringstream& ss )
-{
-	std::string line;
-	std::getline( ss, line, '\n' );
-
-	nNodes = std::stol( line );
-	dNodes.resize( nNodes );
-
-	createRoot( ss );
-
-	for( unsigned int i = 0; i < nNodes - 1; i++ ) {
-		struct NodeInfo nInf;
-		getNextNode( nInf, ss );
-		createNode( nInf );
-	}
-}
+//void GTree::createNode( struct NodeInfo& nInf )
+//{
+//	for( int i = 0; i < nInf.comCnt; i++ )
+//		tmpNode = tmpNode->parent;
+//	
+//	tmpNode->subnodes[nInf.ind] = &( dNodes[head] );
+//	head++;
+//
+//	tmpNode->subnodes[nInf.ind]->parent = tmpNode;
+//	tmpNode = tmpNode->subnodes[nInf.ind];
+//
+//	tmpNode->occs = nInf.occs;
+//	tmpNode->weight = nInf.weight;
+//}
+//
+//void GTree::createRoot( std::stringstream& ss )
+//{
+//	struct NodeInfo nInf;
+//	getNextNode( nInf, ss );
+//	root = &( dNodes[0] );
+//	tmpNode = root;
+//	head++;
+//
+//	tmpNode->occs = nInf.occs;
+//	tmpNode->weight = nInf.weight;
+//}
+//
+//void GTree::processSString( std::stringstream& ss )
+//{
+//	std::string line;
+//	std::getline( ss, line, '\n' );
+//
+//	nNodes = std::stol( line );
+//	dNodes.resize( nNodes );
+//
+//	createRoot( ss );
+//
+//	for( unsigned int i = 0; i < nNodes - 1; i++ ) {
+//		struct NodeInfo nInf;
+//		getNextNode( nInf, ss );
+//		createNode( nInf );
+//	}
+//}
 
 /** ---------------- Path Printing ----------------- **/
 void GTree::printAllPaths( short label ) { 
@@ -505,9 +506,6 @@ void GTree::printAllPaths( short label ) {
 
 void GTree::printAllPaths( Node* node, int len, short label )
 {
-    if( !node )
-        return;
-
 	occuPaths.erase( len, occuPaths.length() );
 	std::string val = GTH::valToString( node->occs );
     occuPaths += val;
@@ -530,6 +528,7 @@ void GTree::printAllPaths( Node* node, int len, short label )
         return;
     }
 	for( int i = 0; i < NBASES; i++ )
-		printAllPaths( node->subnodes[i], len, i );
+		if( node->subnodes[i] )
+			printAllPaths( &dNodes[node->subnodes[i]], len, i );
 }
 

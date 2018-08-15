@@ -12,12 +12,11 @@
  *******************************************************************/
 #include "../includes/Node.H"
 
-Node::Node(): occs( 0 ), weight( 0 ), endCnt( 0 ), parent( nullptr )
+Node::Node(): occs( 0 ), weight( 0 ), endCnt( 0 )
 {
 	omp_init_lock( &lock );
-
 	for( int i = 0; i < NBASES; i++ )
-		subnodes[i] = nullptr;
+		subnodes[i] = 0;
 }
 
 Node::Node( const Node& tmpNode ) 

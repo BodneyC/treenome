@@ -30,10 +30,10 @@ typedef struct Node {
 	std::atomic<int32_t> endCnt;
 	omp_lock_t lock;
 	short offset;
-	int64_t readNum;
-	Node* subnodes[NBASES];
+	int32_t readNum;
+	int32_t subnodes[NBASES];
 	// TMP
-	Node* parent;
+	//Node* parent;
 
 	Node();
 	//Copy and assignment functions needed for atomics
