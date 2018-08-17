@@ -96,9 +96,31 @@ void TreeTop::buildSequence()
 }
 
 /** ------------ Tree Reconstruction --------------- **/
-signed int TreeTop::reconstructTrees()
+signed int TreeTop::storeTrees( std::string& sFilename )
 {
-	std::ifstream inFile( iFilename );
+	std::ofstream storeFile( sFilename, std::ios::binary );
+	if( !storeFile.is_open() )
+		return OUT_FILE_ERROR;
+
+	for( int i = 0; i < NBASES; i++ ) {
+		int64_t tmp64 = trees[i].getDNodeSize();
+		storeFile.write( ( char* ) &tmp64, sizeof( int64_t ) );
+	}
+
+	for( int i = 0; i < NBASES; i++ )
+		trees[i].writeTreeToFile( storeFile );
+
+	//for( int i = 0; i < NBASES; i++ )
+	//	treeStrings[i] = trees[i].storeTree( i );
+	
+	storeFile.close();
+
+	return 0;
+}
+
+signed int TreeTop::reconstructTrees( std::string& iFilename )
+{
+	std::ifstream inFile( iFilename, std::ios::binary );
 	if( !inFile.is_open() )
 		return IN_FILE_ERROR;
 
@@ -106,11 +128,11 @@ signed int TreeTop::reconstructTrees()
 		int64_t tmp64;
 		inFile.read( ( char* ) &tmp64, sizeof( int64_t ) );
 		std::cout << tmp64 << std::endl;
-		trees[i].resizeDeque( tmp64 );
+		trees[i].resizeVector( tmp64 );
 	}
 
 	for(int i = 0; i < NBASES; i++) {
-		trees[i].writeDeque( inFile );
+		trees[i].writeVector( inFile );
 	}
 
 	//std::ifstream inFile( iFilename );
@@ -158,28 +180,6 @@ void TreeTop::processReadsOne()
 }
 
 /** --------------- Misc Functions ----------------- **/
-signed int TreeTop::storeTrees( std::string& sFilename )
-{
-	std::ofstream storeFile( sFilename, std::ios::binary );
-	if( !storeFile.is_open() )
-		return OUT_FILE_ERROR;
-
-	for( int i = 0; i < NBASES; i++ ) {
-		int64_t tmp64 = trees[i].getDNodeSize();
-		storeFile.write( ( char* ) &tmp64, sizeof( int64_t ) );
-	}
-
-	for( int i = 0; i < NBASES; i++ )
-		trees[i].writeTreeToFile( storeFile );
-
-	//for( int i = 0; i < NBASES; i++ )
-	//	treeStrings[i] = trees[i].storeTree( i );
-	
-	storeFile.close();
-
-	return 0;
-}
-
 void TreeTop::printTrees()
 {
 	for( int i = 0; i < NBASES; i++ )

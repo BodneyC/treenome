@@ -73,11 +73,11 @@ public:
 	/* Tree creation functions */
 	void init();
 	void createRoot( short ind );
-	void addReadOne( uint32_t readNum, short offset ); 
+	void addReadOne( uint64_t readNum, short offset ); 
 	void balanceNode( Node* node );
 	/* Tree Recreation Functions */
-	void resizeDeque( int64_t tmp64 );
-	void writeDeque( std::ifstream& inFile );
+	void resizeVector( int64_t tmp64 );
+	void writeVector( std::ifstream& inFile );
 	void processSString( std::stringstream& ss );
 private:
 	Node* root;

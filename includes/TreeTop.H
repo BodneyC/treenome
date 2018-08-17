@@ -20,9 +20,7 @@ class TreeTop {
 public:
 	std::string treeStrings[NBASES];
 
-	TreeTop(): sequence( "" ), nReads( 0 ), readLength( 0 ), iFilename( "" ) {  }
-	explicit TreeTop( const std::string& _iFilename ): 
-		 sequence( "" ), nReads( 0 ), readLength( 0 ), iFilename( _iFilename ) {  }
+	TreeTop(): sequence( "" ), nReads( 0 ), readLength( 0 ) {  }
 
 	/* Common */
 	void buildSequence();
@@ -32,15 +30,13 @@ public:
 	/* FReads */
 	void processReadsOne();
 	/* FFile */
-	signed int reconstructTrees();
+	signed int reconstructTrees( std::string& iFilename );
 	
 private:
 	std::string sequence;
 	int64_t nReads;
 	int readLength;
 	GTree trees[NBASES];
-	std::stringstream ss[NBASES];
-	std::string iFilename;
 
 	short maxPath();
 	bool rootOccsAboveThresh();

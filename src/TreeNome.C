@@ -129,8 +129,8 @@ TreeTop* createTreeFromReads( struct CMDArgs& argList )
 
 TreeTop* loadTreeFromFile( struct CMDArgs& argList )
 {
-	TreeTop* treeTop = new TreeTop( argList.lFilename );
-	treeTop->reconstructTrees();
+	TreeTop* treeTop = new TreeTop;
+	treeTop->reconstructTrees( argList.lFilename );
 
 	return treeTop;
 }

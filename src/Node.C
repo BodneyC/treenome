@@ -31,12 +31,15 @@ Node::Node( const Node& tmpNode )
 
 Node& Node::operator=( const Node& tmpNode ) 
 {
-	float tmpWeight = tmpNode.weight;
-	int64_t tmpOccs = tmpNode.occs;
-
+	this->occs = tmpNode.occs.load();
+	this->weight = tmpNode.weight.load();
+	this->endCnt = tmpNode.endCnt.load();
 	omp_init_lock( &lock );
-	this->weight = tmpWeight;
-	this->occs = tmpOccs;
+	this->offset = tmpNode.offset;
+	this->readNum = tmpNode.readNum;
+
+	for( int i = 0; i < NBASES; i++ )
+		this->subnodes[i] = tmpNode.subnodes[i];
 
 	return* this;
 }
@@ -45,4 +48,3 @@ double Node::getRatio()
 {
 	return weight.load() / static_cast<double>( occs.load() );
 }
-

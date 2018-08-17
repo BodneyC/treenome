@@ -158,9 +158,8 @@ void GTree::addToSeq( uint64_t offset, std::string &sequence )
 
 /** --------------- Tree from Reads ---------------- **/
 void GTree::init() {
-	// Because reallocation of std::vectors is assured if its class is a 
-	// std::vector, a vector of vectors has been used with a 1-by-1 
-	// .push_back()
+	// A deque has been used to prevent frequent reallocations of existing
+	// vector data when dNodes is resized
 	omp_init_lock( &lock );
 	dNodes.resize( RES );
 }
@@ -182,15 +181,14 @@ void GTree::updateWeightAndOccs( Node* node, char qual )
 
 void GTree::createRoot( short ind )
 {
-	uint32_t i;
 	char qual;
-	root = &( dNodes[head] );
+	root = &( dNodes[0] );
 	nNodes++;
 
-	for( i = 0; i < GTH::seqReads.size(); i++ ) {
+	for( int64_t i = 0; i < GTH::seqReads.size(); i++ ) {
 		int offset = -1;
 		// Find algorithm in bool vec
-		for( int j = 0; j < GTH::seqReads[i].size(); j++ ) {
+		for( int64_t j = 0; j < GTH::seqReads[i].size(); j++ ) {
 			if( GTH::seqReads[i].getBaseInd(j) == ind ) {
 				offset = j;
 				break;
@@ -227,7 +225,7 @@ void GTree::createNode( Node* node, short ind, char qual, uint64_t rN, int offse
 }
 
 /** --------------- Read Processing ---------------- **/
-void GTree::addReadOne( uint32_t readNum, short offset ) 
+void GTree::addReadOne( uint64_t readNum, short offset ) 
 {
 	//std::lock_guard<std::mutex> cncn(gtMut);
 	std::vector<Node*> paths;
@@ -237,7 +235,7 @@ void GTree::addReadOne( uint32_t readNum, short offset )
 	bool returnBool = 0, updateBool = 0;
 
 	// Edge case
-	if( root->offset == offset && ( uint32_t )root->readNum == readNum )
+	if( root->readNum == readNum && root->offset == offset )
 		return;
 
 	for( int i = offset + 1; i < GTH::seqReads[readNum].size(); i++ ) {
@@ -245,7 +243,7 @@ void GTree::addReadOne( uint32_t readNum, short offset )
 		paths.push_back( node );
 
 		omp_set_lock( &node->lock );
-		int32_t nextNodeLoc = node->subnodes[ind];
+		int64_t nextNodeLoc = node->subnodes[ind];
 		if( !nextNodeLoc ) {
 			//std::cout << ( *read ).getQual( i ) << std::endl;
 			createNode( node, ind, ( *read ).getQual( i ), readNum, i );
@@ -282,7 +280,7 @@ void GTree::addReadOne( uint32_t readNum, short offset )
 void GTree::balanceNode( Node* node )
 {
 	// Get the offset and read before overiding/updating
-	int32_t lReadNum = node->readNum;
+	uint64_t lReadNum = node->readNum;
 	SeqRead* lRead = &GTH::seqReads[lReadNum];
 	short lOffset = node->offset + 1;
 	bool clearBool = 0;
@@ -309,7 +307,7 @@ void GTree::balanceNode( Node* node )
 	updateWeightAndOccs(node, lQual);
 
 	// If the paths follow the same route:
-	int32_t rReadNum = node->readNum;
+	uint64_t rReadNum = node->readNum;
 	SeqRead* rRead = &GTH::seqReads[rReadNum];
 	short rOffset = node->offset + 1;
 	lOffset++;
@@ -362,7 +360,7 @@ void GTree::balanceNode( Node* node )
 
 void GTree::potAddNode(Node* node)
 {
-	int32_t rN = node->readNum;
+	int64_t rN = node->readNum;
 	SeqRead* tRead = &GTH::seqReads[rN];
 	short offset = node->offset + 1;
 
@@ -383,15 +381,19 @@ void GTree::writeTreeToFile( std::ofstream& storeFile )
 }
 
 /** --------------- Tree From File ----------------- **/
-void GTree::resizeDeque( int64_t tmp64 )
+void GTree::resizeVector( int64_t tmp64 )
 {
 	nNodes = tmp64;
 	dNodes.resize( nNodes );
 }
 
-void GTree::writeDeque( std::ifstream& inFile )
+void GTree::writeVector( std::ifstream& inFile )
 {
-	inFile.read( ( char* ) &dNodes, nNodes * sizeof( Node ) );
+	for( int64_t i = 0; i < nNodes; i++ ) {
+		Node tmpNode;
+		inFile.read( ( char* ) &tmpNode, sizeof( Node ) );
+		dNodes[i] = tmpNode;
+	}
 	root = &dNodes[0];
 }
 
