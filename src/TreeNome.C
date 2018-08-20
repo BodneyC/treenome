@@ -22,6 +22,8 @@
 #include "../includes/InputFile.H"
 #include "../includes/TreeTop.H"
 
+#define OUT
+
 typedef struct CMDArgs {
 	std::string fFilename, stFilename, lFilename, ssFilename;
 	bool printToScreen, storeToFile, loadFile, analyse;
@@ -122,7 +124,7 @@ void writeTreesToDisk( std::string stFilename, TreeTop* treeTop )
 		outFile << treeTop->treeStrings[i].c_str() << std::endl;
 }
 
-TreeTop* createTreeFromReads( CMDArgs& argList )
+TreeTop* createTreeFromReads( CMDArgs& argList, OUT double& t2 )
 {
 	InputFile inpFile( argList.fFilename, argList.phredBase );
 	if( !inpFile.readFastQ() ) {
@@ -133,7 +135,10 @@ TreeTop* createTreeFromReads( CMDArgs& argList )
 	}
 
 	TreeTop* treeTop = new TreeTop;
+
+	double t1 = omp_get_wtime();
 	treeTop->processReadsOne();
+	t2 = omp_get_wtime() - t1;
 
 	return treeTop;
 }
@@ -144,6 +149,13 @@ TreeTop* loadTreeFromFile( CMDArgs& argList )
 	treeTop->reconstructTrees( argList.lFilename );
 
 	return treeTop;
+}
+
+void analysis( TreeTop* treeTop, double timeToConstructTrees, double timeToBuildSeq )
+{
+	std::cout << "Number of threads in use: " << NUM_THREADS << std::endl;
+	std::cout << "Time to construct trees:  " << timeToConstructTrees << std::endl;
+	std::cout << "Time to build sequence:   " << timeToBuildSeq << std::endl;
 }
 
 int main( int argc, char** argv )
@@ -167,13 +179,14 @@ int main( int argc, char** argv )
 	}
 
 	omp_set_num_threads( NUM_THREADS );
-	std::cout << "Number of threads in use: " << NUM_THREADS << std::endl;
+
+	double timeToConstructTrees;
 
 	TreeTop* treeTop;
 	if( argList.loadFile ) {
 		treeTop = loadTreeFromFile( argList );
 	} else {
-		treeTop = createTreeFromReads( argList );
+		treeTop = createTreeFromReads( argList, timeToConstructTrees );
 	}
 
 	if( !treeTop )
@@ -186,8 +199,10 @@ int main( int argc, char** argv )
 			return progFail;
 	}
 
+	double t1 = omp_get_wtime();
 	treeTop->buildSequence();
-	
+	double timeToBuildSeq = omp_get_wtime() - t1;
+
 	progFail = treeTop->storeSequence( argList.ssFilename );
 	if( progFail )
 		return progFail;
@@ -197,8 +212,10 @@ int main( int argc, char** argv )
 		treeTop->printSequence();
 	}
 
-	if( argList.analyse )
+	if( argList.analyse ) {
+		analysis( treeTop, timeToConstructTrees, timeToBuildSeq );
 		treeTop->analyseTrees();
+	}
 
 	delete treeTop;
 
