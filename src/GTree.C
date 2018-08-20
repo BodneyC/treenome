@@ -97,7 +97,7 @@ signed short GTree::highestThresh( Node* node )
 
 	for( short i = 0; i < NBASES; i++ ) {
 		Node* tmpNode = &dNodes[node->subnodes[i]];
-		if( tmpNode && tmpNode->occs ) {
+		if( node->subnodes[i] && tmpNode->occs ) {
 			double curRat = tmpNode->getRatio();
 			if( curRat > maxRat ) {
 				maxRat = curRat;
