@@ -11,16 +11,13 @@
  *
  *******************************************************************/
 /* TODO:
- * - Adjust print sequence
- * - Quality vs. Occurrences threshold
- * - Double accuracy in summation (negligible)
- * - Reconstructed tree analyses
- * - Timing and memory recording
- * - End of sequcence counter, run in reverse to get first base
+ * - Analysis of trees
  */
 #include "../includes/tclap/CmdLine.h"
 #include "../includes/InputFile.H"
 #include "../includes/TreeTop.H"
+#include "sys/types.h"
+#include "sys/sysinfo.h"
 
 #define OUT
 
@@ -151,11 +148,88 @@ TreeTop* loadTreeFromFile( CMDArgs& argList )
 	return treeTop;
 }
 
-void analysis( TreeTop* treeTop, double timeToConstructTrees, double timeToBuildSeq )
+int64_t parseLine( std::string& line ) {
+	size_t posOfK = line.find_last_of( 'k' );
+	if( posOfK == std::string::npos )
+		return -1;
+
+    int j = 0;
+	while ( line[j] < '0' || line[j] > '9' ) 
+		j++;
+
+	std::string val = line.substr( j, posOfK - j );
+
+	int64_t retVal = std::stoll( val, nullptr, 10 );
+
+    return retVal;
+}
+
+int64_t getMemInUse() { 
+	std::ifstream self( "/proc/self/status" );
+	if( !self.is_open() )
+		return IN_FILE_ERROR;
+
+    int result = -1;
+	std::string line;
+
+    while( getline( self, line, '\n' ) ) {
+        if( line.substr( 0, 7 ) == "VmSize:" ) {
+            result = parseLine( line );
+            break;
+        }
+    }
+
+    self.close();
+    return result;
+}
+
+// https://stackoverflow.com/questions/7276826/c-format-number-with-commas
+template< typename T>
+std::string valWCommas( T val )
 {
-	std::cout << "Number of threads in use: " << NUM_THREADS << std::endl;
-	std::cout << "Time to construct trees:  " << timeToConstructTrees << std::endl;
-	std::cout << "Time to build sequence:   " << timeToBuildSeq << std::endl;
+	std::string st = std::to_string( val );
+	int i = st.find_last_of( "." );
+	if( i == -1 ) {
+		i = st.length() - 3;
+	} else {
+		i -= 3;
+		st.erase( st.find_last_not_of( '0' ) + 1, std::string::npos );
+		if( st[st.length() - 1] == '.' )
+			st = st.substr( 0, st.length() - 1 );
+	}
+
+	while( i > 0 ) {
+		st.insert( i, "," );
+		i -=3;
+	}
+
+	return st;
+}
+
+signed int analysis( TreeTop* treeTop, double timeToConstructTrees, double timeToBuildSeq )
+{
+	std::cout << "--------------------------------\nTiming Information:\n" << std::endl;
+	std::cout << "Number of threads in use       : " << NUM_THREADS << std::endl;
+	std::cout << "Time to construct trees  ( s ) : " << timeToConstructTrees << std::endl;
+	std::cout << "Time to build sequence   ( s ) : " << timeToBuildSeq << std::endl;
+
+	struct sysinfo memInf;
+	sysinfo ( &memInf );
+
+	int64_t totVirtMem = memInf.totalram;
+	totVirtMem *= memInf.mem_unit;
+	double totVirtMemKB = static_cast<double>( totVirtMem ) / 1024.0;
+
+	int64_t vMemInUse = getMemInUse();
+	if( vMemInUse == -1 )
+		return vMemInUse;
+
+	std::cout << "\n--------------------------------\nMemory Information:\n" << std::endl;
+	std::cout << "Virtual memory in use   ( KB ) : " << valWCommas( vMemInUse ) << std::endl;
+	std::cout << "       Total available  ( KB ) : " << valWCommas( totVirtMemKB ) << std::endl;
+	std::cout << "       Percent used      ( % ) : " << static_cast<double>( vMemInUse ) / totVirtMemKB << std::endl;
+
+	return 0;
 }
 
 int main( int argc, char** argv )
@@ -194,7 +268,6 @@ int main( int argc, char** argv )
 
 	if( argList.storeToFile ) {
 		progFail = treeTop->storeTrees( argList.stFilename );
-		//writeTreesToDisk( argList.stFilename, treeTop );
 		if( progFail )
 			return progFail;
 	}
