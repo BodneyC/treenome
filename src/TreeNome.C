@@ -22,16 +22,16 @@
 #include "../includes/InputFile.H"
 #include "../includes/TreeTop.H"
 
-struct CMDArgs {
-	std::string fFilename, sFilename, lFilename;
-	bool printToScreen, storeToFile, loadFile;
+typedef struct CMDArgs {
+	std::string fFilename, stFilename, lFilename, ssFilename;
+	bool printToScreen, storeToFile, loadFile, analyse;
 	int phredBase;
 
 	CMDArgs(): 
-		fFilename( "" ), sFilename( "" ), lFilename( "" ),
-		printToScreen( 0 ), storeToFile( 0 ), loadFile( 0 ),
+		fFilename( "" ), stFilename( "" ), lFilename( "" ), ssFilename( "" ),
+		printToScreen( 0 ), storeToFile( 0 ), loadFile( 0 ), analyse( 0 ),
 		phredBase( 33 ) {  }
-};
+} CMDArgs;
 
 signed int inFileCheck( std::string filename )
 {
@@ -42,15 +42,17 @@ signed int inFileCheck( std::string filename )
 		return IN_FILE_ERROR;
 }
 
-signed int returnArgs( int argc, char** argv, struct CMDArgs& argList ) 
+signed int returnArgs( int argc, char** argv, CMDArgs& argList ) 
 {
 	try {
 		TCLAP::CmdLine cmd( "Tree based de novo DNA assembler", ' ', "1.04" );
 		TCLAP::ValueArg<std::string> fFileArg( "f", "fastqfile", "Input file in fastq format", false, "", "string" );
-		TCLAP::ValueArg<std::string> lFileArg( "l", "trenomefile", 
+		TCLAP::ValueArg<std::string> lFileArg( "l", "load-file", 
 				"Input file which was previously outputted from TreeNome", false, "", "string" );
-		TCLAP::ValueArg<std::string> sFileArg( "s", "storefile", 
+		TCLAP::ValueArg<std::string> stFileArg( "", "store-tree", 
 				"File in which to store the tree data", false, "", "string" );
+		TCLAP::ValueArg<std::string> ssFileArg( "s", "store-sequence", 
+				"File in which to store the sequence data", true, "", "string" );
 		TCLAP::ValueArg<int> threadArg( "t", "threads", "Number of threads to use", false, 1, "int" );
 		TCLAP::ValueArg<double> threshArg( "", "thresh", "Threashold value", false, 0.3f, "0 to 1" );
 		std::vector<std::string> pAllowed = { "Phred+33", "Phred+64", "Solexa+64" };
@@ -58,9 +60,11 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 		TCLAP::ValueArg<std::string> scoreArg( "", "score-sys", 
 				"Scoring system. Phred+33 default (Sanger)", false, "Phred+33", &pAllowedVC );
 		TCLAP::SwitchArg oSwitch( "o", "stdout", "Print to stdout", cmd, 0 );
+		TCLAP::SwitchArg aSwitch( "a", "analyse", "Perform tree analysis", cmd, 0 );
 
 		cmd.xorAdd( fFileArg, lFileArg );
-		cmd.add( sFileArg );
+		cmd.add( stFileArg );
+		cmd.add( ssFileArg );
 		cmd.add( threadArg );
 		cmd.add( threshArg );
 		cmd.add( scoreArg );
@@ -77,9 +81,14 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 			if( inFileCheck( argList.lFilename ) )
 				return IN_FILE_ERROR;
 		}
-		argList.sFilename = sFileArg.getValue();
-		if( sFileArg.isSet() )
+
+		argList.stFilename = stFileArg.getValue();
+		if( stFileArg.isSet() )
 			argList.storeToFile = 1;
+
+		if( ssFileArg.isSet() )
+			argList.ssFilename = ssFileArg.getValue();
+
 		NUM_THREADS = threadArg.getValue();
 		if( NUM_THREADS > omp_get_max_threads() )
 			return THREAD_ERROR;
@@ -95,6 +104,7 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 		}
 
 		argList.printToScreen = oSwitch.getValue();
+		argList.analyse = aSwitch.getValue();
 		GTH::thresh = threshArg.getValue();
 	} catch ( TCLAP::ArgException &e ) {
 		std::cerr << "Error: " << e.error() << " for arg " << e.argId() << std::endl;
@@ -102,14 +112,14 @@ signed int returnArgs( int argc, char** argv, struct CMDArgs& argList )
 	return 0;
 }
 
-void writeTreesToDisk( std::string sFilename, TreeTop* treeTop )
+void writeTreesToDisk( std::string stFilename, TreeTop* treeTop )
 {
-	std::ofstream outFile( sFilename );
+	std::ofstream outFile( stFilename );
 	for( int i = 0; i < NBASES; i++ )
 		outFile << treeTop->treeStrings[i].c_str() << std::endl;
 }
 
-TreeTop* createTreeFromReads( struct CMDArgs& argList )
+TreeTop* createTreeFromReads( CMDArgs& argList )
 {
 	InputFile inpFile( argList.fFilename, argList.phredBase );
 	if( !inpFile.readFastQ() ) {
@@ -122,12 +132,10 @@ TreeTop* createTreeFromReads( struct CMDArgs& argList )
 	TreeTop* treeTop = new TreeTop;
 	treeTop->processReadsOne();
 
-	std::cout << "\n----------" << std::endl;
-
 	return treeTop;
 }
 
-TreeTop* loadTreeFromFile( struct CMDArgs& argList )
+TreeTop* loadTreeFromFile( CMDArgs& argList )
 {
 	TreeTop* treeTop = new TreeTop;
 	treeTop->reconstructTrees( argList.lFilename );
@@ -137,7 +145,7 @@ TreeTop* loadTreeFromFile( struct CMDArgs& argList )
 
 int main( int argc, char** argv )
 {
-	struct CMDArgs argList;
+	CMDArgs argList;
 	signed int progFail = returnArgs( argc, argv, argList );
 
 	switch ( progFail ) {
@@ -156,8 +164,7 @@ int main( int argc, char** argv )
 	}
 
 	omp_set_num_threads( NUM_THREADS );
-	if( NUM_THREADS > 1 )
-		std::cout << "Number of threads in use: " << NUM_THREADS << std::endl;
+	std::cout << "Number of threads in use: " << NUM_THREADS << std::endl;
 
 	TreeTop* treeTop;
 	if( argList.loadFile ) {
@@ -170,19 +177,25 @@ int main( int argc, char** argv )
 		return FILE_ERROR;
 
 	if( argList.storeToFile ) {
-		progFail = treeTop->storeTrees( argList.sFilename );
-		//writeTreesToDisk( argList.sFilename, treeTop );
+		progFail = treeTop->storeTrees( argList.stFilename );
+		//writeTreesToDisk( argList.stFilename, treeTop );
 		if( progFail )
 			return progFail;
 	}
 
 	treeTop->buildSequence();
+	
+	progFail = treeTop->storeSequence( argList.ssFilename );
+	if( progFail )
+		return progFail;
 
 	if( argList.printToScreen ) {
 		treeTop->printTrees();
+		treeTop->printSequence();
 	}
 
-	treeTop->printSequence();
+	if( argList.analyse )
+		treeTop->analyseTrees();
 
 	delete treeTop;
 

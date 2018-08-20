@@ -4,3 +4,4 @@ fastq/*
 TreeNome
 OUTFILES/*
 scripts/*
+BUILD_OUT/*.gno

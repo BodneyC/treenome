@@ -95,6 +95,19 @@ void TreeTop::buildSequence()
 //}
 }
 
+signed int TreeTop::storeSequence( std::string& oFilename )
+{
+	std::ofstream storeFile( oFilename );
+	if( !storeFile.is_open() )
+		return OUT_FILE_ERROR;
+
+	storeFile << sequence;
+
+	storeFile.close();
+
+	return 0;
+}
+
 /** ------------ Tree Reconstruction --------------- **/
 signed int TreeTop::storeTrees( std::string& sFilename )
 {
@@ -134,7 +147,6 @@ signed int TreeTop::reconstructTrees( std::string& iFilename )
 	for(int i = 0; i < NBASES; i++) {
 		int64_t tmp64;
 		inFile.read( ( char* ) &tmp64, sizeof( int64_t ) );
-		std::cout << tmp64 << std::endl;
 		trees[i].resizeVector( tmp64 );
 	}
 
@@ -189,5 +201,9 @@ void TreeTop::printSequence()
 			std::cout << sequence.substr( i, TWIDTH ) << std::endl;
 
 	std::cout << sequence.substr( i, sequence.length() - i ) << std::endl;
+}
+
+void TreeTop::analyseTrees()
+{
 }
 

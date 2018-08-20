@@ -27,6 +27,8 @@ public:
 	void printTrees();
 	signed int storeTrees( std::string& sFilename );
 	void printSequence();
+	signed int storeSequence( std::string& oFilename );
+	void analyseTrees();
 	/* FReads */
 	void processReadsOne();
 	/* FFile */
