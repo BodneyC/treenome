@@ -399,7 +399,54 @@ void GTree::writeVector( std::ifstream& inFile )
 	root = &dNodes[0];
 }
 
-/** ---------------- Path Printing ----------------- **/
+/** -------------- Useful Functions ---------------- **/
+int32_t GTree::maxDepth( Node* node )
+{
+	int32_t depth[NBASES] = { -1 };
+	int32_t ret = 0;
+
+	for( int i = 0; i < NBASES; i++ ) {
+		if( node->subnodes[i] ) {
+			ret = -1;
+			depth[i] = maxDepth( &dNodes[node->subnodes[i]] );
+		}
+	}
+
+	if( !ret )
+		return 1;
+	
+	for( int i = 0; i < NBASES; i++ )
+		if( depth[i] > ret )
+			ret = depth[i];
+
+	return ret + 1;
+}
+
+int32_t GTree::maxDepthAThresh( Node* node )
+{
+	int32_t depth[NBASES] = { -1 };
+	int32_t ret = 0;
+
+	if( node->getRatio() < GTH::thresh )
+		return 0;
+
+	for( int i = 0; i < NBASES; i++ ) {
+		if( node->subnodes[i] ) {
+			ret = -1;
+			depth[i] = maxDepthAThresh( &dNodes[node->subnodes[i]] );
+		}
+	}
+
+	if( !ret )
+		return 1;
+	
+	for( int i = 0; i < NBASES; i++ )
+		if( depth[i] > ret )
+			ret = depth[i];
+
+	return ret + 1;
+}
+
 void GTree::printAllPaths( short label ) { 
 	printAllPaths( root, 0, label );
 	basePaths = occuPaths = "";
@@ -420,7 +467,7 @@ void GTree::printAllPaths( Node* node, int len, short label )
 	for( int i = 0; i < NBASES; i++ )
 		if( node->subnodes[i] )
 			check = true;
-	std::cout << "WEIGHT: " << node->weight << '\n';
+	//std::cout << "WEIGHT: " << node->weight << '\n';
     if( !check ) {
 		occuPaths.erase( occuPaths.length() - 1 );
 		std::cout << occuPaths << ": EOS" << std::endl;

@@ -184,6 +184,49 @@ void TreeTop::processReadsOne()
 }
 
 /** --------------- Misc Functions ----------------- **/
+char retBase( int index )
+{
+	char base;
+	switch( index ) {
+	case 0:
+		base = 'A'; 
+		break;
+	case 1:
+		base = 'C';
+		break;
+	case 2:
+		base = 'G';
+		break;
+	case 3:
+		base = 'T';
+		break;
+	default:
+		base = 'N';
+	}
+	return base;
+}
+
+void TreeTop::analyseTrees()
+{
+	for( int i = 0; i < NBASES; i++ ) {
+		nodeCnt[i] = trees[i].getNNodes();
+		maxDepth[i] = trees[i].maxDepth( trees[i].getRoot() );
+		maxDepthAThresh[i] = trees[i].maxDepthAThresh( trees[i].getRoot() );
+	}
+}
+
+void TreeTop::printAnalysis()
+{
+	std::cout << "\n------------------------------------------\nTree Information:\n" << std::endl;
+
+	for( int i = 0; i < NBASES; i++ ) {
+		std::cout << "- " << retBase( i ) << "-tree:" << std::endl;
+		std::cout << "  Node count                   : " << nodeCnt[i] << std::endl;
+		std::cout << "  Maximum depth of tree        : " << maxDepth[i] << std::endl;
+		std::cout << "  Max depth above threshold    : " << maxDepthAThresh[i] << '\n' << std::endl;
+	}
+}
+
 void TreeTop::printTrees()
 {
 	for( int i = 0; i < NBASES; i++ )
@@ -201,9 +244,5 @@ void TreeTop::printSequence()
 			std::cout << sequence.substr( i, TWIDTH ) << std::endl;
 
 	std::cout << sequence.substr( i, sequence.length() - i ) << std::endl;
-}
-
-void TreeTop::analyseTrees()
-{
 }
 

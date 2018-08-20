@@ -29,6 +29,7 @@ public:
 	void printSequence();
 	signed int storeSequence( std::string& oFilename );
 	void analyseTrees();
+	void printAnalysis();
 	/* FReads */
 	void processReadsOne();
 	/* FFile */
@@ -39,6 +40,7 @@ private:
 	int64_t nReads;
 	int readLength;
 	GTree trees[NBASES];
+	int32_t nodeCnt[NBASES], maxDepth[NBASES], maxDepthAThresh[NBASES];
 
 	short maxPath();
 	bool rootOccsAboveThresh();

@@ -14,6 +14,7 @@
 #define _GTREE_
 
 #include <iostream>
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <deque>
@@ -43,14 +44,6 @@ namespace GTH {
 	std::string valToString( T& val );
 }
 
-struct NodeInfo {
-	int ind, comCnt;
-	int64_t occs;
-	double weight;
-
-	NodeInfo(): ind( 0 ), comCnt( 0 ), occs( 0 ), weight( 0 ) {  }
-};
-
 // GTree class used in construction and destruction of tree
 class GTree {
 public:
@@ -72,6 +65,8 @@ public:
 	void init( short i );
 	void addReadOne( uint64_t readNum, short offset ); 
 	void balanceNode( Node* node );
+	int32_t maxDepth( Node* node );
+	int32_t maxDepthAThresh( Node* node );
 	/* Tree Recreation Functions */
 	void resizeVector( int64_t tmp64 );
 	void writeVector( std::ifstream& inFile );

@@ -21,12 +21,15 @@ Node::Node(): occs( 0 ), weight( 0 ), endCnt( 0 )
 
 Node::Node( const Node& tmpNode ) 
 {
-	float tmpWeight = tmpNode.weight;
-	int64_t tmpOccs = tmpNode.occs;
-
+	this->occs = tmpNode.occs.load();
+	this->weight = tmpNode.weight.load();
+	this->endCnt = tmpNode.endCnt.load();
 	omp_init_lock( &lock );
-	weight = tmpWeight;
-	occs = tmpOccs;
+	this->offset = tmpNode.offset;
+	this->readNum = tmpNode.readNum;
+
+	for( int i = 0; i < NBASES; i++ )
+		this->subnodes[i] = tmpNode.subnodes[i];
 }
 
 Node& Node::operator=( const Node& tmpNode ) 

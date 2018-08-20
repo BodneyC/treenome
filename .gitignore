@@ -1,5 +1,5 @@
 obj/*.o
-fastq/*.fastq
+fastq/*
 !fastq/example.fastq
 *.exe
 TreeNome

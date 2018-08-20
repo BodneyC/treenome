@@ -208,10 +208,10 @@ std::string valWCommas( T val )
 
 signed int analysis( TreeTop* treeTop, double timeToConstructTrees, double timeToBuildSeq )
 {
-	std::cout << "--------------------------------\nTiming Information:\n" << std::endl;
+	std::cout << "------------------------------------------\nTiming Information:\n" << std::endl;
 	std::cout << "Number of threads in use       : " << NUM_THREADS << std::endl;
 	std::cout << "Time to construct trees  ( s ) : " << timeToConstructTrees << std::endl;
-	std::cout << "Time to build sequence   ( s ) : " << timeToBuildSeq << std::endl;
+	std::cout << "Time to build sequence   ( s ) : " << timeToBuildSeq << '\n' << std::endl;
 
 	struct sysinfo memInf;
 	sysinfo ( &memInf );
@@ -224,10 +224,10 @@ signed int analysis( TreeTop* treeTop, double timeToConstructTrees, double timeT
 	if( vMemInUse == -1 )
 		return vMemInUse;
 
-	std::cout << "\n--------------------------------\nMemory Information:\n" << std::endl;
+	std::cout << "------------------------------------------\nMemory Information:\n" << std::endl;
 	std::cout << "Virtual memory in use   ( KB ) : " << valWCommas( vMemInUse ) << std::endl;
-	std::cout << "       Total available  ( KB ) : " << valWCommas( totVirtMemKB ) << std::endl;
-	std::cout << "       Percent used      ( % ) : " << static_cast<double>( vMemInUse ) / totVirtMemKB << std::endl;
+	std::cout << "Total available         ( KB ) : " << valWCommas( totVirtMemKB ) << std::endl;
+	std::cout << "Percent used             ( % ) : " << static_cast<double>( vMemInUse ) / totVirtMemKB << std::endl;
 
 	return 0;
 }
@@ -262,7 +262,6 @@ int main( int argc, char** argv )
 	} else {
 		treeTop = createTreeFromReads( argList, timeToConstructTrees );
 	}
-
 	if( !treeTop )
 		return FILE_ERROR;
 
@@ -271,6 +270,13 @@ int main( int argc, char** argv )
 		if( progFail )
 			return progFail;
 	}
+
+	// Has to be before buildSequence()
+	if( argList.printToScreen )
+		treeTop->printTrees();
+
+	// Has to be before buildSequence()
+	treeTop->analyseTrees();
 
 	double t1 = omp_get_wtime();
 	treeTop->buildSequence();
@@ -281,13 +287,12 @@ int main( int argc, char** argv )
 		return progFail;
 
 	if( argList.printToScreen ) {
-		treeTop->printTrees();
 		treeTop->printSequence();
 	}
 
 	if( argList.analyse ) {
 		analysis( treeTop, timeToConstructTrees, timeToBuildSeq );
-		treeTop->analyseTrees();
+		treeTop->printAnalysis();
 	}
 
 	delete treeTop;
