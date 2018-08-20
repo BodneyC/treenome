@@ -14,7 +14,6 @@
 #include "../includes/GTree.H"
 
 #ifdef __MINGW64__
-#include <sstream>
 namespace mingw_fix {
 	{
 		std::ostringstream ss;
@@ -74,9 +73,9 @@ Node* GTree::getRoot()
 		return nullptr; 
 }
 
-int64_t GTree::getDNodeSize()
+int64_t GTree::getNNodes()
 {
-	return dNodes.size();
+	return nNodes;
 }
 
 short GTree::countChildren( Node* node )
@@ -157,11 +156,12 @@ void GTree::addToSeq( uint64_t offset, std::string &sequence )
 }
 
 /** --------------- Tree from Reads ---------------- **/
-void GTree::init() {
+void GTree::init( short i ) {
 	// A deque has been used to prevent frequent reallocations of existing
 	// vector data when dNodes is resized
 	omp_init_lock( &lock );
 	dNodes.resize( RES );
+	createRoot( i );
 }
 
 /** ---------------- Tree Creation ----------------- **/
@@ -227,7 +227,6 @@ void GTree::createNode( Node* node, short ind, char qual, uint64_t rN, int offse
 /** --------------- Read Processing ---------------- **/
 void GTree::addReadOne( uint64_t readNum, short offset ) 
 {
-	//std::lock_guard<std::mutex> cncn(gtMut);
 	std::vector<Node*> paths;
 
 	Node* node = root;
@@ -384,12 +383,15 @@ void GTree::writeTreeToFile( std::ofstream& storeFile )
 void GTree::resizeVector( int64_t tmp64 )
 {
 	nNodes = tmp64;
-	dNodes.resize( nNodes );
+	if( tmp64 % RES )
+		tmp64 = (tmp64 / RES + 1) * RES;
+	//std::cout << tmp64 << std::endl;
+	dNodes.resize( tmp64 );
 }
 
 void GTree::writeVector( std::ifstream& inFile )
 {
-	for( int64_t i = 0; i < nNodes; i++ ) {
+	for( int64_t i = 0; i < dNodes.size(); i++ ) {
 		Node tmpNode;
 		inFile.read( ( char* ) &tmpNode, sizeof( Node ) );
 		dNodes[i] = tmpNode;

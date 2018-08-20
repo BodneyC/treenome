@@ -15,9 +15,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <sstream>
-#include <vector>
 #include <deque>
 #include <limits>
 #include "SeqRead.H"
@@ -66,13 +64,12 @@ public:
 	void followPath( Node* node, short ind, std::string& sequence );
 	/* Usefull non-essential */
 	Node* getRoot();
-	int64_t getDNodeSize();
+	int64_t getNNodes();
 	void printAllPaths( short label );
 	std::string storeTree( short label );
 	void writeTreeToFile( std::ofstream& storeFile );
 	/* Tree creation functions */
-	void init();
-	void createRoot( short ind );
+	void init( short i );
 	void addReadOne( uint64_t readNum, short offset ); 
 	void balanceNode( Node* node );
 	/* Tree Recreation Functions */
@@ -92,14 +89,11 @@ private:
 	signed short highestThresh( Node* node );
 	short countChildren( Node* node );
 	/* Tree creation functions */
+	void createRoot( short ind );
 	void potAddNode( Node* node );
 	void updateWeight( Node* node, char qual );
 	void updateWeightAndOccs( Node* node, char qual );
 	void createNode( Node* node, short label, char qual, uint64_t rN, int offset );
-	/* Tree Recreation Functions */
-	void createRoot( std::stringstream& ss );
-	void createNode( struct NodeInfo& nInf );
-	void getNextNode( struct NodeInfo& nInf, std::stringstream& ss );
 	/* Public->private overloads */
 	void printAllPaths( Node* node, int len, short label );
 	void storeTree( Node* node );

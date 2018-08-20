@@ -13,9 +13,6 @@
 #ifndef _INP_FILE_
 #define _INP_FILE_
 
-#include <fstream>
-#include <vector>
-#include <string>
 #include "GTree.H"
 
 #define FILE_ERROR -2

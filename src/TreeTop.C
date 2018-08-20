@@ -103,16 +103,18 @@ signed int TreeTop::storeTrees( std::string& sFilename )
 		return OUT_FILE_ERROR;
 
 	for( int i = 0; i < NBASES; i++ ) {
-		int64_t tmp64 = trees[i].getDNodeSize();
+		storeFile.write( ( char* ) &GTH::startOccs[i], sizeof( int64_t ) );
+		storeFile.write( ( char* ) &GTH::startWeights[i], sizeof( double ) );
+	}
+
+	for( int i = 0; i < NBASES; i++ ) {
+		int64_t tmp64 = trees[i].getNNodes();
 		storeFile.write( ( char* ) &tmp64, sizeof( int64_t ) );
 	}
 
 	for( int i = 0; i < NBASES; i++ )
 		trees[i].writeTreeToFile( storeFile );
 
-	//for( int i = 0; i < NBASES; i++ )
-	//	treeStrings[i] = trees[i].storeTree( i );
-	
 	storeFile.close();
 
 	return 0;
@@ -124,6 +126,11 @@ signed int TreeTop::reconstructTrees( std::string& iFilename )
 	if( !inFile.is_open() )
 		return IN_FILE_ERROR;
 
+	for( int i = 0; i < NBASES; i++ ) {
+		inFile.read( ( char* ) &GTH::startOccs[i], sizeof( int64_t ) );
+		inFile.read( ( char* ) &GTH::startWeights[i], sizeof( double ) );
+	}
+
 	for(int i = 0; i < NBASES; i++) {
 		int64_t tmp64;
 		inFile.read( ( char* ) &tmp64, sizeof( int64_t ) );
@@ -131,24 +138,10 @@ signed int TreeTop::reconstructTrees( std::string& iFilename )
 		trees[i].resizeVector( tmp64 );
 	}
 
-	for(int i = 0; i < NBASES; i++) {
+	for(int i = 0; i < NBASES; i++)
 		trees[i].writeVector( inFile );
-	}
 
-	//std::ifstream inFile( iFilename );
-	//std::string line;
-
-	//int i = 0;
-	//while( std::getline( inFile, line ) ) {
-	//	ss[i / 2] << line;
-	//	if( !( i % 2 ) )
-	//		ss[i / 2] << '\n';
-	//	i++;
-	//}
-
-	//for( int i = 0; i < NBASES; i++ ) {
-	//	trees[i].processSString( ss[i] );
-	//}
+	inFile.close();
 	
 	return 0;
 }
@@ -164,8 +157,7 @@ void TreeTop::threadFunc( uint64_t i )
 void TreeTop::processReadsOne()
 {
 	for( int i = 0; i < NBASES; i++ ) {
-		trees[i].init();
-		trees[i].createRoot( i );
+		trees[i].init( i );
 	}
 
 #pragma omp parallel num_threads( NUM_THREADS )
