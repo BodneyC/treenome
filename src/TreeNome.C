@@ -86,8 +86,11 @@ signed int returnArgs( int argc, char** argv, CMDArgs& argList )
 		if( stFileArg.isSet() )
 			argList.storeToFile = 1;
 
-		if( ssFileArg.isSet() )
+		if( ssFileArg.isSet() ) {
 			argList.ssFilename = ssFileArg.getValue();
+			if( argList.ssFilename.substr( argList.ssFilename.find_last_of( "." ) + 1 ) != "gns" )
+				argList.ssFilename += ".gno";
+		}
 
 		NUM_THREADS = threadArg.getValue();
 		if( NUM_THREADS > omp_get_max_threads() )
