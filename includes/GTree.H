@@ -36,6 +36,7 @@ namespace GTH {
 	extern double thresh;
 	extern double startWeights[NBASES];
 	extern int64_t startOccs[NBASES];
+	extern int32_t readLength;
 
 	char retLabel( int label );
 	float getNewWeight( double curWeight, int64_t occs, char qual );
@@ -48,19 +49,22 @@ namespace GTH {
 class GTree {
 public:
 	GTree(): root( nullptr ), head( 0 ), nNodes( 0 ), 
-		basePaths( "" ), occuPaths( "" ), treeString( "" ),
-		tmpNode( nullptr ) {  }
+		basePaths( "" ), occuPaths( "" ), treeString( "" ) {  }
 	~GTree() {  }
 
 	/* Sequence creation functions */
 	void addToSeq( uint64_t offset, std::string& sequence );
-	void followPath( Node* node, short ind, std::string& sequence );
+	void followBranch( Node* node, short ind, std::string& sequence );
+	Node* followSeq( int32_t offset, std::string& sequence, std::vector<int32_t>& paths );
+	std::string contSeq( Node* node, std::string& sequence );
+	void reduceOccsAndWeight( std::vector<int32_t>& paths );
 	/* Usefull non-essential */
 	Node* getRoot();
 	int64_t getNNodes();
 	void printAllPaths( short label );
 	std::string storeTree( short label );
 	void writeTreeToFile( std::ofstream& storeFile );
+	signed short highestThresh( Node* node );
 	/* Tree creation functions */
 	void init( short i );
 	void addReadOne( uint64_t readNum, short offset ); 
@@ -77,11 +81,8 @@ private:
 	std::string basePaths, occuPaths, treeString;
 	omp_lock_t lock;
 	std::deque< Node > dNodes;
-	// TMP
-	Node* tmpNode;
 
 	/* Helper functions */
-	signed short highestThresh( Node* node );
 	short countChildren( Node* node );
 	/* Tree creation functions */
 	void createRoot( short ind );

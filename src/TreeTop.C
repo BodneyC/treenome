@@ -63,36 +63,85 @@ short TreeTop::maxPath()
 
 	GTH::startWeights[start]--;
 	GTH::startOccs[start]--;
-	trees[start].followPath( trees[start].getRoot(), start, sequence );
+	trees[start].followBranch( trees[start].getRoot(), start, sequence );
 
 	return start;
 }
 
 void TreeTop::buildSequence()
 {
+	std::vector<Node*> nodeArr( NUM_THREADS, nullptr );
+	std::vector< std::vector<int32_t> > pathsArr( NUM_THREADS );
+	for( int i = 0; i < NUM_THREADS; i++ )
+		pathsArr[i].reserve( GTH::readLength );
+
 	maxPath();
 
 	uint64_t offset = 1;
-//#pragma omp parallel num_threads( NUM_THREADS ) shared( offset )
-//{
-	while( rootOccsAboveThresh() ) {
+	bool cont = rootOccsAboveThresh();
+	int j;
+#pragma omp parallel num_threads( NUM_THREADS ) shared( offset, cont, j )
+{
+	while( cont ) {
+		std::string seqToAdd = "";
 
-		// Possibly make is a tighter gap as its working from single letters
-		// ( this would actually be the k-mer match )
-//#pragma omp single
-//{
-		if( offset >= sequence.length() - MER_LEN ) {
-			sequence += 'N';
-			maxPath();
-			offset += MER_LEN + 1;
+		#pragma omp for schedule( static, 1 )
+		for( int i = 0; i < NUM_THREADS; i++ ) {
+			int thrNum = omp_get_thread_num();
+			if( offset + thrNum < sequence.length() - MER_LEN ) {
+				GTree* thrTree = &trees[BASE_IND( sequence[offset + thrNum] )];
+				if( thrTree->getRoot()->getRatio() >= GTH::thresh )
+					nodeArr[thrNum] = thrTree->followSeq( offset + thrNum, sequence, pathsArr[thrNum] );
+			}
 		}
 
-		if( trees[BASE_IND( sequence[offset] )].getRoot()->getRatio() >= GTH::thresh )
-			trees[BASE_IND( sequence[offset] )].addToSeq( offset, sequence );
-		offset++;
-//}
-	}
-//}
+		#pragma omp single
+		{
+			bool checker = 0;
+
+			for( j = 0; j < NUM_THREADS; j++ ) {
+				if( nodeArr[j] != nullptr ) {
+					checker = 1;
+					break;
+				}
+			}
+
+			if( !checker ) {
+				sequence += 'N';
+				maxPath();
+				offset = sequence.find_last_of( 'N' ) + 1;
+			} else {
+				GTree* thrTree = &trees[BASE_IND( sequence[offset + j] )];
+				thrTree->reduceOccsAndWeight( pathsArr[j] );
+				thrTree->followBranch( nodeArr[j], thrTree->highestThresh(nodeArr[j]), sequence );
+				offset += j + 1;
+			}
+
+			cont = rootOccsAboveThresh();
+		}
+
+
+
+	//#pragma omp single
+	//{
+		// Possibly make is a tighter gap as its working from single letters
+		// ( this would actually be the k-mer match )
+		//if( offset >= sequence.length() - MER_LEN ) {
+		//	sequence += 'N';
+		//	maxPath();
+		//	offset += MER_LEN + 1;
+		//}
+
+		//if( trees[BASE_IND( sequence[offset] )].getRoot()->getRatio() >= GTH::thresh )
+		//	trees[BASE_IND( sequence[offset] )].addToSeq( offset, sequence );
+		//offset++;
+	//}
+
+		std::fill( pathsArr[omp_get_thread_num()].begin(), pathsArr[omp_get_thread_num()].end(), 0 );
+		nodeArr[omp_get_thread_num()] = nullptr;
+	#pragma omp barrier
+	} 
+}
 }
 
 signed int TreeTop::storeSequence( std::string& oFilename )

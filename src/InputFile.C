@@ -27,7 +27,7 @@ bool InputFile::readFastQ()
 	// Bit of a hacky way of doing this...
 	for( std::string line; std::getline( inpFile, line ); i++, j++ ) {
 		if( i == 3 )
-			readLength = line.length();
+			GTH::readLength = readLength = line.length();
 		if( !( i % 4 ) ) {
 			len = line.find( 'N' );
 			line = line.substr( 0, len );

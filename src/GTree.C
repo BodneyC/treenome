@@ -30,6 +30,7 @@ namespace GTH {
 	double startWeights[NBASES];
 	int64_t startOccs[NBASES];
 	int scoreSys;
+	int32_t readLength;
 
 	char retLabel( int label )
 	{
@@ -92,7 +93,6 @@ short GTree::countChildren( Node* node )
 signed short GTree::highestThresh( Node* node )
 {
 	short ind = -1;
-	//double maxRat = std::numeric_limits<double>::lowest();
 	double maxRat = GTH::thresh;
 
 	for( short i = 0; i < NBASES; i++ ) {
@@ -109,7 +109,38 @@ signed short GTree::highestThresh( Node* node )
 	return ind;
 }
 
-void GTree::followPath( Node* node, short ind, std::string &sequence )
+/** --------------- Genome Creation ---------------- **/
+void GTree::reduceOccsAndWeight( std::vector<int32_t>& paths )
+{
+	for( uint32_t i = 0; i < paths.size(); i++ ) {
+		dNodes[paths[i]].occs--;
+		dNodes[paths[i]].weight = dNodes[paths[i]].weight.load() - 1;
+	}
+}
+
+Node* GTree::followSeq( int32_t offset, std::string& sequence, std::vector<int32_t>& paths )
+{
+	Node* node = root;
+	paths.push_back( 0 );
+
+	// Reach the end of the existing path
+	for( uint32_t i = offset; i < sequence.length(); i++ ) {
+		short ind = BASE_IND( sequence[i] );
+		if( node->subnodes[ind] ) {
+			paths.push_back( node->subnodes[ind] );
+			node = &dNodes[node->subnodes[ind]];
+		} else {
+			return nullptr;
+		}
+	}
+
+	if( highestThresh( node ) == -1 )
+		return nullptr;
+
+	return node;
+}
+
+void GTree::followBranch( Node* node, short ind, std::string &sequence )
 {
 	short children;
 	do {
@@ -124,36 +155,35 @@ void GTree::followPath( Node* node, short ind, std::string &sequence )
 	} while( children );
 }
 
-/** --------------- Genome Creation ---------------- **/
-void GTree::addToSeq( uint64_t offset, std::string &sequence )
-{
-	Node* node = root;
-	short ind = 0;
-	std::vector< Node* > nPath;
-
-	// End of current sequence	
-	for( uint32_t i = offset + 1; i < sequence.length(); i++ ) {
-		ind = BASE_IND( sequence[i] );
-		if( node->subnodes[ind] && countChildren( &dNodes[node->subnodes[ind]] ) ) {
-			nPath.push_back( node );
-			node = &dNodes[node->subnodes[ind]];
-		} else {
-			return;
-		}
-	}
-
-	ind = highestThresh( node );
-	if( ind != -1 ) {
-		followPath( &dNodes[node->subnodes[ind]], ind, sequence );
-		
-		// Only if something is contributed to the sequence should the 
-		// occurences be lowered
-		for( uint32_t i = 0; i < nPath.size(); i++ ) {
-			nPath[i]->occs--;
-			nPath[i]->weight = nPath[i]->weight.load() - 1;
-		}
-	}
-}
+//void GTree::addToSeq( uint64_t offset, std::string &sequence )
+//{
+//	Node* node = root;
+//	short ind = 0;
+//	std::vector< Node* > nPath;
+//
+//	// End of current sequence	
+//	for( uint32_t i = offset + 1; i < sequence.length(); i++ ) {
+//		ind = BASE_IND( sequence[i] );
+//		if( node->subnodes[ind] && countChildren( &dNodes[node->subnodes[ind]] ) ) {
+//			nPath.push_back( node );
+//			node = &dNodes[node->subnodes[ind]];
+//		} else {
+//			return;
+//		}
+//	}
+//
+//	ind = highestThresh( node );
+//	if( ind != -1 ) {
+//		followPath( &dNodes[node->subnodes[ind]], ind, sequence );
+//		
+//		// Only if something is contributed to the sequence should the 
+//		// occurences be lowered
+//		for( uint32_t i = 0; i < nPath.size(); i++ ) {
+//			nPath[i]->occs--;
+//			nPath[i]->weight = nPath[i]->weight.load() - 1;
+//		}
+//	}
+//}
 
 /** --------------- Tree from Reads ---------------- **/
 void GTree::init( short i ) {

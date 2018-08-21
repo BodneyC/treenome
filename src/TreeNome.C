@@ -87,7 +87,7 @@ signed int returnArgs( int argc, char** argv, CMDArgs& argList )
 
 		if( ssFileArg.isSet() ) {
 			argList.ssFilename = ssFileArg.getValue();
-			if( argList.ssFilename.substr( argList.ssFilename.find_last_of( "." ) + 1 ) != "gns" )
+			if( argList.ssFilename.substr( argList.ssFilename.find_last_of( "." ) + 1 ) != "gno" )
 				argList.ssFilename += ".gno";
 		}
 
