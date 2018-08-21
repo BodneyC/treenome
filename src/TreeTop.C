@@ -82,12 +82,12 @@ void TreeTop::buildSequence()
 	int j;
 #pragma omp parallel num_threads( NUM_THREADS ) shared( offset, cont, j )
 {
+	int thrNum = omp_get_thread_num();
 	while( cont ) {
 		std::string seqToAdd = "";
 
 		#pragma omp for schedule( static, 1 )
 		for( int i = 0; i < NUM_THREADS; i++ ) {
-			int thrNum = omp_get_thread_num();
 			if( offset + thrNum < sequence.length() - MER_LEN ) {
 				GTree* thrTree = &trees[BASE_IND( sequence[offset + thrNum] )];
 				if( thrTree->getRoot()->getRatio() >= GTH::thresh )
@@ -120,25 +120,8 @@ void TreeTop::buildSequence()
 			cont = rootOccsAboveThresh();
 		}
 
-
-
-	//#pragma omp single
-	//{
-		// Possibly make is a tighter gap as its working from single letters
-		// ( this would actually be the k-mer match )
-		//if( offset >= sequence.length() - MER_LEN ) {
-		//	sequence += 'N';
-		//	maxPath();
-		//	offset += MER_LEN + 1;
-		//}
-
-		//if( trees[BASE_IND( sequence[offset] )].getRoot()->getRatio() >= GTH::thresh )
-		//	trees[BASE_IND( sequence[offset] )].addToSeq( offset, sequence );
-		//offset++;
-	//}
-
-		std::fill( pathsArr[omp_get_thread_num()].begin(), pathsArr[omp_get_thread_num()].end(), 0 );
-		nodeArr[omp_get_thread_num()] = nullptr;
+		pathsArr[thrNum].erase( pathsArr[thrNum].begin(), pathsArr[thrNum].end() );
+		nodeArr[thrNum] = nullptr;
 	#pragma omp barrier
 	} 
 }
