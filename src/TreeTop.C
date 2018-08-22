@@ -111,7 +111,7 @@ void TreeTop::buildSequence()
 				thrTree->reduceOccsAndWeight( pathsArr[j] );
 				thrTree->followBranch( nodeArr[j], thrTree->highestThresh(nodeArr[j]), sequence );
 				offset += j + 1;
-			} else if( offset + NUM_THREADS >= sequence.length() ) {
+			} else if( offset + NUM_THREADS >= sequence.length() - MER_LEN ) {
 				sequence += 'N';
 				maxPath();
 				offset = sequence.find_last_of( 'N' ) + 1;
