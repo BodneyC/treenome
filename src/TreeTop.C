@@ -80,7 +80,7 @@ void TreeTop::buildSequence()
 	uint64_t offset = 1;
 	bool cont = rootOccsAboveThresh();
 	int j;
-#pragma omp parallel num_threads( NUM_THREADS ) shared( offset, cont, j )
+#pragma omp parallel num_threads( NUM_THREADS ) default( shared )
 {
 	int thrNum = omp_get_thread_num();
 	while( cont ) {
@@ -106,15 +106,17 @@ void TreeTop::buildSequence()
 				}
 			}
 
-			if( !checker ) {
-				sequence += 'N';
-				maxPath();
-				offset = sequence.find_last_of( 'N' ) + 1;
-			} else {
+			if( checker ) {
 				GTree* thrTree = &trees[BASE_IND( sequence[offset + j] )];
 				thrTree->reduceOccsAndWeight( pathsArr[j] );
 				thrTree->followBranch( nodeArr[j], thrTree->highestThresh(nodeArr[j]), sequence );
 				offset += j + 1;
+			} else if( offset + NUM_THREADS >= sequence.length() ) {
+				sequence += 'N';
+				maxPath();
+				offset = sequence.find_last_of( 'N' ) + 1;
+			} else {
+				offset += NUM_THREADS;
 			}
 
 			cont = rootOccsAboveThresh();
