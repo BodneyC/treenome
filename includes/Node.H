@@ -27,13 +27,10 @@ extern int NUM_THREADS;
 typedef struct Node {
 	std::atomic<int64_t> occs;
 	std::atomic<double> weight;
-	std::atomic<int32_t> endCnt;
 	omp_lock_t lock;
 	short offset;
 	uint64_t readNum;
 	int32_t subnodes[NBASES];
-	// TMP
-	//Node* parent;
 
 	Node();
 	//Copy and assignment functions needed for atomics

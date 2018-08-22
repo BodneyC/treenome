@@ -28,7 +28,7 @@
 #define OUT_FILE_ERROR -3
 #define THREAD_ERROR -4
 
-#define RES 1000
+#define RES 100000
 
 // GTree Helpers
 namespace GTH {
