@@ -1,7 +1,9 @@
-obj/*.o
+obj/*
 fastq/*
+!fastq/example.fastq
 *.exe
 TreeNome
 OUTFILES/*
 scripts/*
-BUILD_OUT/*.gno
+data_out/*.gno
+data/*
