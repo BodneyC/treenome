@@ -5,24 +5,18 @@ INC=-I./includes -I./includes/tclap
 PROG=TreeNome
 SRC=$(wildcard src/*.C)
 OBJ=$(patsubst src/%.C, obj/%.o, $(SRC))
-#OPTIM?=0
-#OPTIMFLAGS=-fsave-optimization-record -foptimization-record-file=./
-#ifeq($(OPTIM), 1)
-	#$(CC) $(INC) $(CFLAGS) $(LIBS) -o $@ -c $<
-#else
-	#$(CC) $(INC) $(OPTIMFLAGS) $(CFLAGS) $(LIBS) -o $@ -c $<
-#endif
+OPTIM=-O3
 
 $(PROG): $(OBJ)
-	$(CC) $(INC) $(CFLAGS) $(LIBS) -o $@ $^
+	$(CC) $(INC) $(CFLAGS) $(LIBS) $(OPTIM) -o $@ $^
 
 obj/%.o: src/%.C
-	$(CC) $(INC) $(CFLAGS) $(LIBS) -o $@ -c $<
+	$(CC) $(INC) $(CFLAGS) $(LIBS) $(OPTIM) -o $@ -c $<
 
 .PHONY: run clean
 
 run:
-	./$(PROG) -f ./fastq/frag_2.fastq
+	./$(PROG) -f ./fastq/example.fastq -s ./data_out/test.gno
 
 clean:
 	rm $(OBJ) $(PROG)
