@@ -6,13 +6,10 @@
  * Author: Primary - Benjamin Carrington
  *		   Secondary - Dr. Ben Mora
  *
- * Organisation: Swansea University
- * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ * Details: Usage of TCLAP for command line args;
+ *		recording of times/memory usages in analysis()
  *
  *******************************************************************/
-/* TODO:
- * - Analysis of trees
- */
 #include "../includes/tclap/CmdLine.h"
 #include "../includes/InputFile.H"
 #include "../includes/TreeTop.H"
@@ -248,20 +245,19 @@ int main( int argc, char** argv )
 		std::cout << "[ERR]: " << NUM_THREADS << " threads requested, " << omp_get_max_threads() << " available."<< std::endl;
 		break;
 	}
-	if( progFail ) {
+	if( progFail )
 		return progFail;
-	}
 
 	omp_set_num_threads( NUM_THREADS );
 
 	double timeToConstructTrees;
 
 	TreeTop* treeTop;
-	if( argList.loadFile ) {
+	if( argList.loadFile )
 		treeTop = loadTreeFromFile( argList );
-	} else {
+	else
 		treeTop = createTreeFromReads( argList, timeToConstructTrees );
-	}
+
 	if( !treeTop )
 		return FILE_ERROR;
 
@@ -286,9 +282,8 @@ int main( int argc, char** argv )
 	if( progFail )
 		return progFail;
 
-	if( argList.printToScreen ) {
+	if( argList.printToScreen )
 		treeTop->printSequence();
-	}
 
 	if( argList.analyse ) {
 		analysis( treeTop, timeToConstructTrees, timeToBuildSeq );

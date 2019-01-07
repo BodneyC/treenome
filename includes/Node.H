@@ -6,9 +6,6 @@
  * Author: Primary - Benjamin Carrington
  *		   Secondary - Dr. Ben Mora
  *
- * Organisation: Swansea University
- * Copyright (c) 2018, Benjamin Carrington, all rights reserved
- *
  *******************************************************************/
 #ifndef _NODE_
 #define _NODE_

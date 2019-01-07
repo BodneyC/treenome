@@ -6,8 +6,12 @@
  * Author: Primary - Benjamin Carrington
  *		   Secondary - Dr. Ben Mora
  *
- * Organisation: Swansea University
- * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ * Details: Tightly-packed 2-bit-array representing a read where:
+ *		| B. | Represents |
+ *		| 00 |      A     |
+ *		| 01 |      C     |
+ *		| 02 |      T     |
+ *		| 03 |      G     |
  *
  *******************************************************************/
 #include "../includes/SeqRead.H"

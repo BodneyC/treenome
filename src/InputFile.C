@@ -6,8 +6,8 @@
  * Author: Primary - Benjamin Carrington
  *		   Secondary - Dr. Ben Mora
  *
- * Organisation: Swansea University
- * Copyright (c) 2018, Benjamin Carrington, all rights reserved
+ * Details: Serial FASTQ file reader, not at all fast, not the
+ *		point of the project
  *
  *******************************************************************/
 #include "../includes/InputFile.H"
