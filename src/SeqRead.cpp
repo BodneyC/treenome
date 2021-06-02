@@ -1,5 +1,5 @@
 /********************************************************************
- * Filename: SeqRead.C [C++ source code]
+ * Filename: SeqRead.cpp [C++ source code]
  *
  * Description: Implementation of SeqRead class
  *
@@ -14,28 +14,28 @@
  *		| 03 |      G     |
  *
  *******************************************************************/
-#include "../includes/SeqRead.H"
+#include "SeqRead.hpp"
 
 // Order important here, matches BASE_IND()
-char SeqRead::ind2base[4] = { 'A', 'C', 'T', 'G' };
+char SeqRead::idx_to_base[4] = { 'A', 'C', 'T', 'G' };
 
 SeqRead::SeqRead( const std::string &read, std::string qual, int pB )
 {
 	for( uint32_t i = 0; i < read.length(); i++ ) {
-		pushBase( BASE_IND( read[i] ) );
+		push_base( BASE_IND( read[i] ) );
 		qual[i] -= pB;
 	}
 
 	qualities = qual;
 }
 
-void SeqRead::pushBase( char base )
+void SeqRead::push_base( char base )
 {
 	sequence.push_back( base & 0x02 );
 	sequence.push_back( base & 0x01 );
 }
 
-short SeqRead::getBaseInd( short offset )
+short SeqRead::get_base_idx( short offset )
 {
 	offset *= 2;
 	short retVal = sequence[offset];
@@ -45,13 +45,13 @@ short SeqRead::getBaseInd( short offset )
 	return retVal;
 }
 
-char SeqRead::getCharBase( short ind )
+char SeqRead::get_char_base( short ind )
 {
-	ind = getBaseInd( ind );
-	return ind2base[ind];
+	ind = get_base_idx( ind );
+	return idx_to_base[ind];
 }
 
-char SeqRead::getQual( short offset )
+char SeqRead::get_quality( short offset )
 {
 	return qualities[offset];
 }

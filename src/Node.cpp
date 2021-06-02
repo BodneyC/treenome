@@ -1,5 +1,5 @@
 /********************************************************************
- * Filename: Node.C [C++ source code]
+ * Filename: Node.cpp [C++ source code]
  *
  * Description: Implementation of Node class
  *
@@ -7,7 +7,7 @@
  *		   Secondary - Dr. Ben Mora
  *
  *******************************************************************/
-#include "../includes/Node.H"
+#include "Node.hpp"
 
 Node::Node(): occs( 0 ), weight( 0 )
 {
@@ -22,7 +22,7 @@ Node::Node( const Node& tmpNode )
 	this->weight = tmpNode.weight.load();
 	omp_init_lock( &lock );
 	this->offset = tmpNode.offset;
-	this->readNum = tmpNode.readNum;
+	this->read_num = tmpNode.read_num;
 
 	for( int i = 0; i < NBASES; i++ )
 		this->subnodes[i] = tmpNode.subnodes[i];
@@ -34,7 +34,7 @@ Node& Node::operator=( const Node& tmpNode )
 	this->weight = tmpNode.weight.load();
 	omp_init_lock( &lock );
 	this->offset = tmpNode.offset;
-	this->readNum = tmpNode.readNum;
+	this->read_num = tmpNode.read_num;
 
 	for( int i = 0; i < NBASES; i++ )
 		this->subnodes[i] = tmpNode.subnodes[i];
@@ -42,7 +42,7 @@ Node& Node::operator=( const Node& tmpNode )
 	return* this;
 }
 
-double Node::getRatio()
+double Node::get_ratio()
 {
 	return weight.load() / static_cast<double>( occs.load() );
 }

@@ -1,0 +1,37 @@
+[
+{
+  "directory": "/home/benjc/Documents/treenome",
+  "command": "/usr/bin/c++  -I/home/benjc/Documents/treenome/include  -fopenmp -g -std=c++11 -o CMakeFiles/treenome.dir/src/main.cpp.o -c /home/benjc/Documents/treenome/src/main.cpp",
+  "file": "/home/benjc/Documents/treenome/src/main.cpp"
+},
+{
+  "directory": "/home/benjc/Documents/treenome",
+  "command": "/usr/bin/c++  -I/home/benjc/Documents/treenome/include  -fopenmp -g -std=c++11 -o CMakeFiles/treenome.dir/src/cli.cpp.o -c /home/benjc/Documents/treenome/src/cli.cpp",
+  "file": "/home/benjc/Documents/treenome/src/cli.cpp"
+},
+{
+  "directory": "/home/benjc/Documents/treenome",
+  "command": "/usr/bin/c++  -I/home/benjc/Documents/treenome/include  -fopenmp -g -std=c++11 -o CMakeFiles/treenome.dir/src/GTree.cpp.o -c /home/benjc/Documents/treenome/src/GTree.cpp",
+  "file": "/home/benjc/Documents/treenome/src/GTree.cpp"
+},
+{
+  "directory": "/home/benjc/Documents/treenome",
+  "command": "/usr/bin/c++  -I/home/benjc/Documents/treenome/include  -fopenmp -g -std=c++11 -o CMakeFiles/treenome.dir/src/InputFile.cpp.o -c /home/benjc/Documents/treenome/src/InputFile.cpp",
+  "file": "/home/benjc/Documents/treenome/src/InputFile.cpp"
+},
+{
+  "directory": "/home/benjc/Documents/treenome",
+  "command": "/usr/bin/c++  -I/home/benjc/Documents/treenome/include  -fopenmp -g -std=c++11 -o CMakeFiles/treenome.dir/src/Node.cpp.o -c /home/benjc/Documents/treenome/src/Node.cpp",
+  "file": "/home/benjc/Documents/treenome/src/Node.cpp"
+},
+{
+  "directory": "/home/benjc/Documents/treenome",
+  "command": "/usr/bin/c++  -I/home/benjc/Documents/treenome/include  -fopenmp -g -std=c++11 -o CMakeFiles/treenome.dir/src/SeqRead.cpp.o -c /home/benjc/Documents/treenome/src/SeqRead.cpp",
+  "file": "/home/benjc/Documents/treenome/src/SeqRead.cpp"
+},
+{
+  "directory": "/home/benjc/Documents/treenome",
+  "command": "/usr/bin/c++  -I/home/benjc/Documents/treenome/include  -fopenmp -g -std=c++11 -o CMakeFiles/treenome.dir/src/TreeTop.cpp.o -c /home/benjc/Documents/treenome/src/TreeTop.cpp",
+  "file": "/home/benjc/Documents/treenome/src/TreeTop.cpp"
+}
+]

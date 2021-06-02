@@ -1,5 +1,5 @@
 /********************************************************************
- * Filename: SeqRead.H [C++ header code]
+ * Filename: SeqRead.hpp [C++ header code]
  *
  * Description: Declaration of SeqRead class for 2-bit storage of 
  *				bases
@@ -24,16 +24,16 @@ public:
 
 	short size() { return sequence.size() / 2; }
 
-	void pushBase( char base );
-	short getBaseInd( short offset );
-	char getCharBase( short ind );
+	void push_base( char base );
+	short get_base_idx( short offset );
+	char get_char_base( short ind );
 
-	char getQual( short offset );
+	char get_quality( short offset );
 
 private:
 	std::vector<bool> sequence;
 	std::string qualities;
-	static char ind2base[4];
+	static char idx_to_base[4];
 };
 
 #endif /*_SEQ_READ_*/

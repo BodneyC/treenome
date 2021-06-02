@@ -1,5 +1,5 @@
 /********************************************************************
- * Filename: Node.H [C++ header code]
+ * Filename: Node.hpp [C++ header code]
  *
  * Description: Header for Node class
  *
@@ -22,19 +22,19 @@
 extern int NUM_THREADS;
 
 typedef struct Node {
-	std::atomic<int64_t> occs;
-	std::atomic<double> weight;
-	omp_lock_t lock;
-	short offset;
-	uint64_t readNum;
-	int32_t subnodes[NBASES];
+  std::atomic<int64_t> occs;
+  std::atomic<double> weight;
+  omp_lock_t lock;
+  short offset;
+  uint64_t read_num;
+  int32_t subnodes[NBASES];
 
-	Node();
-	//Copy and assignment functions needed for atomics
-	Node( const Node& tmpNode );
-	Node& operator=( const Node& tmpNode );
+  Node();
+  // Copy and assignment functions needed for atomics
+  Node(const Node &tmpNode);
+  Node &operator=(const Node &tmpNode);
 
-	double getRatio();
+  double get_ratio();
 } Node;
 
 #endif /*_NODE*/

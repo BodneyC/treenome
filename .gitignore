@@ -1,9 +1,16 @@
-obj/*
-fastq/*
-!fastq/example.fastq
+# Prog
 *.exe
-TreeNome
-OUTFILES/*
-scripts/*
+out/*
+fastq/*
+treenome
+!out/.keep
 data_out/*.gno
-data/*
+!fastq/example.fastq
+
+# clangd
+.cache
+
+# CMAKE
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
